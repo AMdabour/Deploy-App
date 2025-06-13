@@ -1,11 +1,22 @@
 import axios from 'axios';
 import Cookies from 'js-cookie';
 import { User, Goal, Objective, Task, ApiResponse } from '../types/models';
-import { ambientAI } from 'server/services/ambient-ai';
+
+// Dynamic base URL for Replit
+const getBaseURL = () => {
+  if (typeof window !== 'undefined') {
+    // In browser - use current origin
+    return window.location.origin;
+  }
+  // Fallback for server-side
+  return process.env.REPLIT_DEV_DOMAIN 
+    ? `https://${process.env.REPLIT_DEV_DOMAIN}`
+    : 'http://localhost:3000';
+};
 
 // Configure axios defaults
 const api = axios.create({
-  baseURL: 'http://localhost:8888/',
+  baseURL: getBaseURL(),
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
