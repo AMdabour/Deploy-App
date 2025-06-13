@@ -1,0 +1,200 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-background: #0f0f23;
+  --color-foreground: #e2e8f0;
+  --color-muted: #1e1e3f;
+  --color-muted-foreground: #94a3b8;
+  --color-popover: #0f0f23;
+  --color-popover-foreground: #e2e8f0;
+  --color-card: #1a1a2e;
+  --color-card-foreground: #f1f5f9;
+  --color-border: #2d2d4a;
+  --color-input: #1e1e3f;
+  --color-primary: #6366f1;
+  --color-primary-foreground: #f8fafc;
+  --color-secondary: #16213e;
+  --color-secondary-foreground: #cbd5e1;
+  --color-accent: #0ea5e9;
+  --color-accent-foreground: #f0f9ff;
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #fef2f2;
+  --color-ring: #6366f1;
+  --color-success: #10b981;
+  --color-success-foreground: #ecfdf5;
+  --color-warning: #f59e0b;
+  --color-warning-foreground: #fffbeb;
+  --color-info: #3b82f6;
+  --color-info-foreground: #eff6ff;
+  --color-gradient-start: #6366f1;
+  --color-gradient-end: #0ea5e9;
+}
+
+/* Custom Scrollbar Styles */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #6366f1 #1e1e3f;
+}
+
+/* WebKit browsers (Chrome, Safari, Edge) */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #1e1e3f;
+  border-radius: 10px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #6366f1 0%, #0ea5e9 100%);
+  border-radius: 10px;
+  border: 2px solid #1e1e3f;
+  transition: all 0.3s ease;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #5b5bf6 0%, #0284c7 100%);
+  border: 1px solid #1e1e3f;
+}
+
+*::-webkit-scrollbar-thumb:active {
+  background: linear-gradient(180deg, #4f46e5 0%, #0369a1 100%);
+}
+
+*::-webkit-scrollbar-corner {
+  background: #1e1e3f;
+}
+
+/* Horizontal scrollbar */
+*::-webkit-scrollbar:horizontal {
+  height: 8px;
+}
+
+/* For dialog and modal scrollbars */
+.dialog-content::-webkit-scrollbar,
+.modal-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dialog-content::-webkit-scrollbar-thumb,
+.modal-content::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #6366f1 0%, #0ea5e9 100%);
+  border-radius: 6px;
+  border: 1px solid #1a1a2e;
+}
+
+/* Custom styles for better theming */
+body {
+  background-color: #0f0f23;
+  color: #e2e8f0;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Select dropdown styling */
+select {
+  background-color: #1a1a2e !important;
+  color: #e2e8f0 !important;
+  border-color: #2d2d4a !important;
+}
+
+select option {
+  background-color: #1a1a2e !important;
+  color: #e2e8f0 !important;
+  padding: 8px 12px;
+}
+
+select option:checked {
+  background-color: #6366f1 !important;
+  color: #f8fafc !important;
+}
+
+select option:hover {
+  background-color: #2d2d4a !important;
+  color: #f1f5f9 !important;
+}
+
+/* Textarea styling */
+textarea {
+  background-color: #1a1a2e !important;
+  color: #e2e8f0 !important;
+  border-color: #2d2d4a !important;
+  resize: vertical;
+}
+
+textarea:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
+}
+
+/* Input focus states */
+input:focus {
+  border-color: #6366f1 !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2) !important;
+}
+
+/* Enhanced animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes zoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.4s ease-out;
+}
+
+.animate-zoom-in {
+  animation: zoomIn 0.3s ease-out;
+}
+
+/* Custom utility classes */
+.gradient-text {
+  background: linear-gradient(135deg, #6366f1 0%, #0ea5e9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glass-effect {
+  background: rgba(26, 26, 46, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(45, 45, 74, 0.5);
+}
+
+/* Focus visible for better accessibility */
+.focus-visible\:ring-2:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px #6366f1;
+}
