@@ -181,9 +181,9 @@ export const monthlyObjectives = pgTable('monthly_objectives', {
 export const dailyTasks = pgTable('daily_tasks', {
   id: uuid('id').primaryKey().defaultRandom(),
   objectiveId: uuid('objective_id').references(() => monthlyObjectives.id, {
-    onDelete: 'set null',
+    onDelete: 'cascade',
   }),
-  goalId: uuid('goal_id').references(() => goals.id, { onDelete: 'set null' }),
+  goalId: uuid('goal_id').references(() => goals.id, { onDelete: 'cascade' }),
   userId: uuid('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
