@@ -346,6 +346,7 @@ const DashboardContent = () => {
       let suggestions: any[] = [];
       if (suggestionsResult.status === 'fulfilled') {
         const suggestionsData = suggestionsResult.value;
+        console.log('suggestions result ahmed:' , suggestionsResult)
         console.log('Raw suggestions data:', suggestionsData);
         // Try all possible structures
         if (Array.isArray(suggestionsData)) {

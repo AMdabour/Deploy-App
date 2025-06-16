@@ -176,7 +176,7 @@ const AISuggestions: React.FC<AISuggestionsProps> = ({ suggestions = [] }) => {
               No AI suggestions yet
             </p>
             <p className="text-muted-foreground text-xs mt-1">
-              Complete more tasks to get personalized insights
+              
             </p>
           </div>
         ) : (

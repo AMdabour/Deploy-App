@@ -4,6 +4,7 @@ import { requireAuth } from '../middleware/auth';
 import { z } from 'zod';
 import { validateRequest } from '../middleware/validation';
 import { ambientAI } from 'server/services/ambient-ai';
+import { geminiAmbientAI } from 'server/services/gemini-ambient-ai';
 
 const router = Router();
 
@@ -20,12 +21,158 @@ const VisualAnalysisSchema = z.object({
 });
 
 // GET /api/ambient-ai/suggestions
+// router.get('/suggestions', requireAuth, async (req: Request, res: Response) => {
+//   try {
+//     const userId = (req as any).user.id;
+    
+//     // const ambientService = getAmbientAIService();
+//     const suggestions = await ambientAI.getActiveSuggestions(userId);
+    
+//     // Sort by priority and confidence
+//     const sortedSuggestions = suggestions.sort((a, b) => {
+//       const priorityOrder = { high: 3, medium: 2, low: 1 };
+//       type Priority = keyof typeof priorityOrder;
+//       const priorityA = a.priority as Priority;
+//       const priorityB = b.priority as Priority;
+//       const priorityDiff = priorityOrder[priorityB] - priorityOrder[priorityA];
+//       if (priorityDiff !== 0) return priorityDiff;
+      
+//       return b.confidence - a.confidence;
+//     });
+
+//     res.json({
+//       success: true,
+//       data: { 
+//         suggestions: sortedSuggestions,
+//         count: sortedSuggestions.length,
+//         provider: getCurrentAIProvider(),
+//         enhanced: getCurrentAIProvider() === 'gemini'
+//       },
+//       message: `Found ${sortedSuggestions.length} active suggestions from ${getCurrentAIProvider()}`
+//     });
+//   } catch (error) {
+//     console.error('Get ambient suggestions error:', error);
+//     res.status(500).json({
+//       success: false,
+//       error: error instanceof Error ? error.message : 'Failed to get suggestions'
+//     });
+//   }
+// });
+
+// router.get('/suggestions', requireAuth, async (req: Request, res: Response) => {
+//   try {
+//     const userId = (req as any).user.id;
+    
+//     // Use the correct service based on current provider
+//     const ambientService = getAmbientAIService();
+//     const suggestions = await ambientService.getActiveSuggestions(userId);
+    
+//     // If no suggestions found, try to generate some
+//     if (suggestions.length === 0) {
+//       console.log('No existing suggestions found, generating new ones...');
+//       const currentProvider = getCurrentAIProvider();
+      
+//       if (currentProvider === 'gemini' && ambientService.generateEnhancedProactiveSuggestions) {
+//         // Generate enhanced suggestions for Gemini
+//         const newSuggestions = await ambientService.generateEnhancedProactiveSuggestions(userId, {
+//           contextualAwareness: true,
+//           conversationalMemory: true
+//         });
+//         suggestions.push(...newSuggestions);
+//       } else if (ambientService.generateProactiveSuggestions) {
+//         // Generate standard suggestions
+//         const newSuggestions = await ambientService.generateProactiveSuggestions(userId);
+//         suggestions.push(...newSuggestions);
+//       }
+//     }
+    
+//     // Sort by priority and confidence
+//     const sortedSuggestions = suggestions.sort((a, b) => {
+//       const priorityOrder = { high: 3, medium: 2, low: 1 };
+//       type Priority = keyof typeof priorityOrder;
+//       const priorityA = a.priority as Priority;
+//       const priorityB = b.priority as Priority;
+//       const priorityDiff = priorityOrder[priorityB] - priorityOrder[priorityA];
+//       if (priorityDiff !== 0) return priorityDiff;
+      
+//       return b.confidence - a.confidence;
+//     });
+
+//     res.json({
+//       success: true,
+//       data: { 
+//         suggestions: sortedSuggestions,
+//         count: sortedSuggestions.length,
+//         provider: getCurrentAIProvider(),
+//         enhanced: getCurrentAIProvider() === 'gemini'
+//       },
+//       message: `Found ${sortedSuggestions.length} active suggestions from ${getCurrentAIProvider()}`
+//     });
+//   } catch (error) {
+//     console.error('Get ambient suggestions error:', error);
+//     res.status(500).json({
+//       success: false,
+//       error: error instanceof Error ? error.message : 'Failed to get suggestions'
+//     });
+//   }
+// });
+
+// router.get('/suggestions', requireAuth, async (req: Request, res: Response) => {
+//   try {
+//     const userId = (req as any).user.id;
+
+//     let suggestions = await geminiAmbientAI.getActiveSuggestions(userId);
+    
+//     // If no suggestions found, generate immediate ones
+//     if (suggestions.length === 0) {
+//       console.log('No existing suggestions found, generating immediate suggestions...');
+//       const currentProvider = getCurrentAIProvider();
+      
+//       if (currentProvider === 'gemini' && (geminiAmbientAI as any).generateImmediateSuggestions) {
+//         suggestions = await (geminiAmbientAI as any).generateImmediateSuggestions(userId);
+//       }
+//     }
+    
+//     // Sort by priority and confidence
+//     const sortedSuggestions = suggestions.sort((a, b) => {
+//       const priorityOrder = { high: 3, medium: 2, low: 1 };
+//       type Priority = keyof typeof priorityOrder;
+//       const priorityA = a.priority as Priority;
+//       const priorityB = b.priority as Priority;
+//       const priorityDiff = priorityOrder[priorityB] - priorityOrder[priorityA];
+//       if (priorityDiff !== 0) return priorityDiff;
+      
+//       return b.confidence - a.confidence;
+//     });
+
+//     res.json({
+//       success: true,
+//       data: { 
+//         suggestions: sortedSuggestions,
+//         count: sortedSuggestions.length,
+//         provider: getCurrentAIProvider(),
+//         enhanced: getCurrentAIProvider() === 'gemini',
+//         generated: suggestions.length > 0 && suggestions[0].context?.immediate
+//       },
+//       message: `Found ${sortedSuggestions.length} active suggestions from ${getCurrentAIProvider()}`
+//     });
+//   } catch (error) {
+//     console.error('Get ambient suggestions error:', error);
+//     res.status(500).json({
+//       success: false,
+//       error: error instanceof Error ? error.message : 'Failed to get suggestions'
+//     });
+//   }
+// });
+
 router.get('/suggestions', requireAuth, async (req: Request, res: Response) => {
   try {
     const userId = (req as any).user.id;
     
-    // const ambientService = getAmbientAIService();
-    const suggestions = await ambientAI.getActiveSuggestions(userId);
+    // Use Gemini service directly
+    let suggestions = await geminiAmbientAI.getActiveSuggestions(userId);
+    
+    console.log(`Found ${suggestions.length} suggestions for user ${userId}`);
     
     // Sort by priority and confidence
     const sortedSuggestions = suggestions.sort((a, b) => {
@@ -45,7 +192,12 @@ router.get('/suggestions', requireAuth, async (req: Request, res: Response) => {
         suggestions: sortedSuggestions,
         count: sortedSuggestions.length,
         provider: getCurrentAIProvider(),
-        enhanced: getCurrentAIProvider() === 'gemini'
+        enhanced: getCurrentAIProvider() === 'gemini',
+        sources: {
+          stored: suggestions.filter(s => !s.context?.convertedFromInsight && !s.context?.immediate).length,
+          converted: suggestions.filter(s => s.context?.convertedFromInsight).length,
+          immediate: suggestions.filter(s => s.context?.immediate).length
+        }
       },
       message: `Found ${sortedSuggestions.length} active suggestions from ${getCurrentAIProvider()}`
     });
