@@ -681,24 +681,481 @@ REQUIRED JSON RESPONSE:
   };
 
   // Keep the same interface for backward compatibility
-  async getActiveSuggestions(userId: string): Promise<GeminiProactiveSuggestion[]> {
-    const insights = await storage.insights.getUserInsights(userId, 'gemini_proactive_suggestion');
+  // async getActiveSuggestions(userId: string): Promise<GeminiProactiveSuggestion[]> {
+  //   const insights = await storage.insights.getUserInsights(userId, 'gemini_proactive_suggestion');
+  //   const suggestions: GeminiProactiveSuggestion[] = [];
+
+  //   insights
+  //     .filter(insight => {
+  //       const data = insight.data as { suggestion?: GeminiProactiveSuggestion };
+  //       return data && data.suggestion;
+  //     })
+  //     .forEach(insight => {
+  //       const data = insight.data as { suggestion: GeminiProactiveSuggestion };
+  //       if (data.suggestion) {
+  //         suggestions.push(data.suggestion);
+  //       }
+  //     });
+
+  //   return suggestions.filter(s => new Date(s.validUntil) > new Date());
+  // }
+
+//   async getActiveSuggestions(userId: string): Promise<GeminiProactiveSuggestion[]> {
+//     const insights = await storage.insights.getUserInsights(userId);
+//     const suggestions: GeminiProactiveSuggestion[] = [];
+
+//     insights
+//       .filter(insight => {
+//         const data = insight.data as { suggestion?: GeminiProactiveSuggestion };
+//         return data && data.suggestion;
+//       })
+//       .forEach(insight => {
+//         const data = insight.data as { suggestion: GeminiProactiveSuggestion };
+//         if (data.suggestion) {
+//           suggestions.push(data.suggestion);
+//         }
+//       });
+
+//     // Filter out expired suggestions
+//     const activeSuggestions = suggestions.filter(s => new Date(s.validUntil) > new Date());
+    
+//     // If no active suggestions, try to get from regular insights as fallback
+//     if (activeSuggestions.length === 0) {
+//       console.log('No Gemini-specific suggestions found, checking regular insights...');
+//       const regularInsights = await storage.insights.getUserInsights(userId);
+      
+//       regularInsights
+//         .filter(insight => {
+//           const data = insight.data as { suggestion?: any, suggestions?: any[] };
+//           return data && (data.suggestion || data.suggestions);
+//         })
+//         .forEach(insight => {
+//           const data = insight.data as { suggestion?: any, suggestions?: any[] };
+//           if (data.suggestion) {
+//             // Convert regular suggestion to Gemini format
+//             const geminiSuggestion: GeminiProactiveSuggestion = {
+//               ...data.suggestion,
+//               geminiSpecific: {
+//                 multimodalData: 'converted_from_regular_suggestion'
+//               }
+//             };
+//             if (new Date(geminiSuggestion.validUntil) > new Date()) {
+//               activeSuggestions.push(geminiSuggestion);
+//             }
+//           }
+//           if (data.suggestions && Array.isArray(data.suggestions)) {
+//             data.suggestions.forEach(suggestion => {
+//               const geminiSuggestion: GeminiProactiveSuggestion = {
+//                 ...suggestion,
+//                 geminiSpecific: {
+//                   multimodalData: 'converted_from_regular_suggestion'
+//                 }
+//               };
+//               if (new Date(geminiSuggestion.validUntil) > new Date()) {
+//                 activeSuggestions.push(geminiSuggestion);
+//               }
+//             });
+//           }
+//         });
+//     }
+
+//     return activeSuggestions;
+// }
+
+async getActiveSuggestions(userId: string): Promise<GeminiProactiveSuggestion[]> {
+  try {
+    // First, try to get suggestions stored specifically as suggestions
+    const suggestionInsights = await storage.insights.getUserInsights(userId, 'gemini_proactive_suggestion');
     const suggestions: GeminiProactiveSuggestion[] = [];
 
-    insights
+    // Extract properly stored suggestions
+    suggestionInsights
       .filter(insight => {
         const data = insight.data as { suggestion?: GeminiProactiveSuggestion };
         return data && data.suggestion;
       })
       .forEach(insight => {
         const data = insight.data as { suggestion: GeminiProactiveSuggestion };
-        if (data.suggestion) {
+        if (data.suggestion && new Date(data.suggestion.validUntil) > new Date()) {
           suggestions.push(data.suggestion);
         }
       });
 
-    return suggestions.filter(s => new Date(s.validUntil) > new Date());
+    // If no stored suggestions found, convert productivity insights to suggestions
+    if (suggestions.length === 0) {
+      console.log('No stored suggestions found, converting productivity insights...');
+      
+      const productivityInsights = await storage.insights.getUserInsights(userId);
+      
+      for (const insight of productivityInsights) {
+        const data = insight.data as any;
+        
+        // Handle productivity insights with recommendations
+        if (data && data.overall_score && data.overall_score.recommendations) {
+          const recommendations = data.overall_score.recommendations;
+          
+          recommendations.forEach((recommendation: string, index: number) => {
+            const suggestion: GeminiProactiveSuggestion = {
+              id: `converted_${insight.id}_${index}`,
+              userId,
+              type: this.determineTypeFromRecommendation(recommendation),
+              title: this.extractTitleFromRecommendation(recommendation),
+              description: recommendation,
+              actionable: true,
+              priority: 'medium',
+              context: {
+                convertedFromInsight: true,
+                originalInsightType: insight.insightType,
+                generatedFrom: 'productivity_analysis'
+              },
+              validUntil: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24 hours
+              confidence: 0.7,
+              geminiSpecific: {
+                multimodalData: 'converted_from_productivity_insight'
+              }
+            };
+            suggestions.push(suggestion);
+          });
+        }
+
+        // Handle insights with actionable_tips
+        if (data && data.overall_score && data.overall_score.insights) {
+          const insights = data.overall_score.insights;
+          
+          insights.forEach((insightItem: any) => {
+            if (insightItem.actionable_tips && Array.isArray(insightItem.actionable_tips)) {
+              insightItem.actionable_tips.slice(0, 2).forEach((tip: string, index: number) => {
+                const suggestion: GeminiProactiveSuggestion = {
+                  id: `tip_${insight.id}_${insightItem.type}_${index}`,
+                  userId,
+                  type: this.mapInsightTypeToSuggestionType(insightItem.type),
+                  title: insightItem.title || 'Productivity Improvement',
+                  description: tip,
+                  actionable: true,
+                  priority: insightItem.confidence > 0.8 ? 'high' : 'medium',
+                  context: {
+                    convertedFromTip: true,
+                    insightType: insightItem.type,
+                    confidence: insightItem.confidence,
+                    generatedFrom: 'actionable_tips'
+                  },
+                  validUntil: new Date(Date.now() + 24 * 60 * 60 * 1000),
+                  confidence: insightItem.confidence || 0.7,
+                  geminiSpecific: {
+                    multimodalData: 'converted_from_actionable_tips'
+                  }
+                };
+                suggestions.push(suggestion);
+              });
+            }
+          });
+        }
+      }
+    }
+
+    // If still no suggestions, generate immediate ones
+    if (suggestions.length === 0) {
+      console.log('No insights found, generating immediate suggestions...');
+      const immediateSuggestions = await this.generateImmediateSuggestions(userId);
+      suggestions.push(...immediateSuggestions);
+    }
+
+    // Remove duplicates and sort
+    const uniqueSuggestions = suggestions.filter((suggestion, index, self) => 
+      index === self.findIndex(s => s.title === suggestion.title && s.description === suggestion.description)
+    );
+
+    return uniqueSuggestions.slice(0, 10); // Limit to 10 suggestions
+
+  } catch (error) {
+    console.error('Error getting active suggestions:', error);
+    // Fallback to immediate suggestions
+    return await this.generateImmediateSuggestions(userId);
   }
+}
+
+// Helper methods to convert insights to suggestions
+private determineTypeFromRecommendation(recommendation: string): GeminiProactiveSuggestion['type'] {
+  const lowerRec = recommendation.toLowerCase();
+  
+  if (lowerRec.includes('task') && (lowerRec.includes('track') || lowerRec.includes('manage'))) {
+    return 'task_creation';
+  }
+  if (lowerRec.includes('goal') || lowerRec.includes('objective')) {
+    return 'goal_adjustment';
+  }
+  if (lowerRec.includes('schedule') || lowerRec.includes('time')) {
+    return 'schedule_optimization';
+  }
+  if (lowerRec.includes('break') || lowerRec.includes('energy')) {
+    return 'energy_optimization';
+  }
+  
+  return 'contextual_insight';
+}
+
+private extractTitleFromRecommendation(recommendation: string): string {
+  // Extract first 50 characters as title
+  const title = recommendation.split('.')[0] || recommendation;
+  return title.length > 50 ? title.substring(0, 50) + '...' : title;
+}
+
+private mapInsightTypeToSuggestionType(insightType: string): GeminiProactiveSuggestion['type'] {
+  const typeMap: Record<string, GeminiProactiveSuggestion['type']> = {
+    'task_completion_pattern': 'task_creation',
+    'optimal_work_hours': 'schedule_optimization',
+    'task_duration_accuracy': 'schedule_optimization',
+    'priority_preference': 'task_creation',
+    'goal_progress_pattern': 'goal_adjustment',
+    'scheduling_preference': 'schedule_optimization'
+  };
+  
+  return typeMap[insightType] || 'contextual_insight';
+}
+
+// async generateImmediateSuggestions(userId: string): Promise<GeminiProactiveSuggestion[]> {
+//   try {
+//     const suggestions: GeminiProactiveSuggestion[] = [];
+//     const user = await storage.users.getUserById(userId);
+    
+//     if (!user) return suggestions;
+
+//     // Get today's context
+//     const today = new Date();
+//     const todayTasks = await storage.tasks.getUserTasks(userId, today, today);
+//     const insights = await storage.insights.getUserInsights(userId);
+
+//     // Quick suggestions based on current state
+    
+//     // 1. Unscheduled tasks suggestion
+//     const unscheduledTasks = todayTasks.filter(t => !t.scheduledTime && t.status === 'pending');
+//     if (unscheduledTasks.length > 0) {
+//       suggestions.push({
+//         id: `immediate_schedule_${Date.now()}`,
+//         userId,
+//         type: 'schedule_optimization',
+//         title: 'Schedule Your Tasks',
+//         description: `You have ${unscheduledTasks.length} unscheduled tasks today. Let me help you organize them.`,
+//         actionable: true,
+//         priority: 'medium',
+//         context: {
+//           unscheduledTaskIds: unscheduledTasks.map(t => t.id),
+//           immediate: true
+//         },
+//         validUntil: new Date(Date.now() + 24 * 60 * 60 * 1000),
+//         confidence: 0.8,
+//         geminiSpecific: {
+//           multimodalData: 'immediate_generation'
+//         }
+//       });
+//     }
+
+//     // 2. Energy optimization suggestion
+//     if (user.preferences?.energyLevels) {
+//       const currentHour = new Date().getHours();
+//       const currentEnergyLevel = this.getCurrentEnergyLevel(currentHour, user.preferences.energyLevels);
+      
+//       if (currentEnergyLevel === 'high') {
+//         const highPriorityTasks = todayTasks.filter(t => 
+//           (t.priority === 'high' || t.priority === 'critical') && 
+//           t.status === 'pending'
+//         );
+        
+//         if (highPriorityTasks.length > 0) {
+//           suggestions.push({
+//             id: `immediate_energy_${Date.now()}`,
+//             userId,
+//             type: 'energy_optimization',
+//             title: 'High Energy Time',
+//             description: `You're in a high-energy period. Perfect time to tackle ${highPriorityTasks.length} important tasks.`,
+//             actionable: true,
+//             priority: 'high',
+//             context: {
+//               currentEnergyLevel,
+//               highPriorityTaskIds: highPriorityTasks.map(t => t.id),
+//               immediate: true
+//             },
+//             validUntil: new Date(Date.now() + 4 * 60 * 60 * 1000),
+//             confidence: 0.9,
+//             geminiSpecific: {
+//               multimodalData: 'energy_optimization_immediate'
+//             }
+//           });
+//         }
+//       }
+//     }
+
+//     // 3. Break reminder if working for long periods
+//     const workingTasks = todayTasks.filter(t => t.status === 'in_progress');
+//     if (workingTasks.length > 0) {
+//       suggestions.push({
+//         id: `immediate_break_${Date.now()}`,
+//         userId,
+//         type: 'break_reminder',
+//         title: 'Break Time Reminder',
+//         description: 'You\'ve been working steadily. Consider taking a short break to recharge.',
+//         actionable: true,
+//         priority: 'low',
+//         context: {
+//           workingTaskCount: workingTasks.length,
+//           immediate: true
+//         },
+//         validUntil: new Date(Date.now() + 2 * 60 * 60 * 1000),
+//         confidence: 0.7,
+//         geminiSpecific: {
+//           multimodalData: 'break_reminder_immediate'
+//         }
+//       });
+//     }
+
+//     // Store generated suggestions
+//     for (const suggestion of suggestions) {
+//       await this.storeEnhancedSuggestion(suggestion);
+//     }
+
+//     return suggestions;
+//   } catch (error) {
+//     console.error('Error generating immediate suggestions:', error);
+//     return [];
+//   }
+// }
+
+async generateImmediateSuggestions(userId: string): Promise<GeminiProactiveSuggestion[]> {
+  try {
+    const suggestions: GeminiProactiveSuggestion[] = [];
+    const user = await storage.users.getUserById(userId);
+    
+    if (!user) return suggestions;
+
+    // Get context data
+    const today = new Date();
+    const todayTasks = await storage.tasks.getUserTasks(userId, today, today);
+    const goals = await storage.goals.getUserGoals(userId);
+    const objectives = await storage.objectives.getUserObjectives(userId);
+
+    // 1. Task management suggestions
+    if (todayTasks.length === 0) {
+      suggestions.push({
+        id: `immediate_start_tasks_${Date.now()}`,
+        userId,
+        type: 'task_creation',
+        title: 'Start Your Productivity Journey',
+        description: 'Begin by adding some tasks to track your daily activities. This will help build momentum and create data for better insights.',
+        actionable: true,
+        priority: 'high',
+        context: { immediate: true, reason: 'no_tasks_found' },
+        validUntil: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        confidence: 0.9,
+        geminiSpecific: { multimodalData: 'task_creation_guidance' }
+      });
+    }
+
+    // 2. Goal setting suggestions
+    if (goals.length === 0) {
+      suggestions.push({
+        id: `immediate_set_goals_${Date.now()}`,
+        userId,
+        type: 'goal_adjustment',
+        title: 'Define Your Goals',
+        description: 'Set specific, measurable goals to give direction to your daily tasks. Start with 1-2 goals that matter most to you.',
+        actionable: true,
+        priority: 'high',
+        context: { immediate: true, reason: 'no_goals_found' },
+        validUntil: new Date(Date.now() + 48 * 60 * 60 * 1000),
+        confidence: 0.8,
+        geminiSpecific: { multimodalData: 'goal_setting_guidance' }
+      });
+    }
+
+    // 3. Scheduling suggestions
+    const unscheduledTasks = todayTasks.filter(t => !t.scheduledTime && t.status === 'pending');
+    if (unscheduledTasks.length > 0) {
+      suggestions.push({
+        id: `immediate_schedule_${Date.now()}`,
+        userId,
+        type: 'schedule_optimization',
+        title: 'Schedule Your Tasks',
+        description: `You have ${unscheduledTasks.length} unscheduled tasks. Adding time blocks will help you stay focused and accountable.`,
+        actionable: true,
+        priority: 'medium',
+        context: { 
+          immediate: true, 
+          unscheduledTaskIds: unscheduledTasks.map(t => t.id),
+          reason: 'unscheduled_tasks_found'
+        },
+        validUntil: new Date(Date.now() + 12 * 60 * 60 * 1000),
+        confidence: 0.8,
+        geminiSpecific: { multimodalData: 'scheduling_optimization' }
+      });
+    }
+
+    // 4. Energy-based suggestions
+    const currentHour = new Date().getHours();
+    if (currentHour >= 9 && currentHour <= 11) { // Peak morning hours
+      const highPriorityTasks = todayTasks.filter(t => 
+        (t.priority === 'high' || t.priority === 'critical') && t.status === 'pending'
+      );
+      
+      if (highPriorityTasks.length > 0) {
+        suggestions.push({
+          id: `immediate_morning_focus_${Date.now()}`,
+          userId,
+          type: 'energy_optimization',
+          title: 'Morning Focus Time',
+          description: 'Morning hours are typically high-energy periods. Consider tackling your most important tasks now.',
+          actionable: true,
+          priority: 'medium',
+          context: { 
+            immediate: true, 
+            currentHour,
+            highPriorityTaskIds: highPriorityTasks.map(t => t.id),
+            reason: 'optimal_morning_time'
+          },
+          validUntil: new Date(Date.now() + 3 * 60 * 60 * 1000),
+          confidence: 0.7,
+          geminiSpecific: { multimodalData: 'energy_optimization_morning' }
+        });
+      }
+    }
+
+    // 5. Progress tracking suggestion
+    if (objectives.length === 0 && goals.length > 0) {
+      suggestions.push({
+        id: `immediate_objectives_${Date.now()}`,
+        userId,
+        type: 'goal_adjustment',
+        title: 'Break Down Your Goals',
+        description: 'Create monthly objectives to break your goals into manageable pieces. This makes progress more trackable.',
+        actionable: true,
+        priority: 'medium',
+        context: { 
+          immediate: true, 
+          goalCount: goals.length,
+          reason: 'goals_without_objectives'
+        },
+        validUntil: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        confidence: 0.8,
+        geminiSpecific: { multimodalData: 'objective_creation_guidance' }
+      });
+    }
+
+    // Store generated suggestions for future reference
+    for (const suggestion of suggestions) {
+      await this.storeEnhancedSuggestion(suggestion);
+    }
+
+    return suggestions;
+  } catch (error) {
+    console.error('Error generating immediate suggestions:', error);
+    return [];
+  }
+}
+
+private getCurrentEnergyLevel(hour: number, energyLevels: any): 'high' | 'medium' | 'low' {
+  if (hour >= 6 && hour < 12) return energyLevels.morning;
+  if (hour >= 12 && hour < 18) return energyLevels.afternoon;
+  return energyLevels.evening;
+}
 
   async applySuggestion(userId: string, suggestionId: string): Promise<{ success: boolean; message: string }> {
     // Implementation similar to original ambient AI but enhanced for Gemini suggestions
