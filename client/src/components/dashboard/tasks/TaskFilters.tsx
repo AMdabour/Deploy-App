@@ -60,11 +60,9 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({
     }
   };
 
-  // Simplified filter change handler without recursive updates
+  // Simplified filter change handler
   const handleFilterChange = useCallback(
     (key: keyof TaskFiltersType, value: string) => {
-      console.log('Filter change requested:', key, value);
-
       const newFilters = { ...filters };
 
       if (key === 'goalId') {
@@ -98,7 +96,6 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({
         newFilters[key] = value;
       }
 
-      console.log('Applying filter change:', newFilters);
       onFiltersChange(newFilters);
     },
     [filters, objectives, onFiltersChange]
@@ -116,7 +113,8 @@ const TaskFilters: React.FC<TaskFiltersProps> = ({
     onSearchChange('');
   }, [onFiltersChange, onSearchChange]);
 
-  const hasActiveFilters = Object.values(filters).some((value) => value);
+  const hasActiveFilters =
+    Object.values(filters).some((value) => value) || searchQuery;
 
   return (
     <div className="mb-8 space-y-6">

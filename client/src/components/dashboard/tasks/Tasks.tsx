@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSearchParams } from 'react-router';
 import { AlertCircle } from 'lucide-react';
 import {
@@ -25,127 +25,47 @@ const Tasks = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'calendar'>(
-    'list'
-  );
-  const [searchQuery, setSearchQuery] = useState('');
   const [completingTask, setCompletingTask] = useState<string | null>(null);
   const [deletingTask, setDeletingTask] = useState<string | null>(null);
   const [stats, setStats] = useState<any>(null);
 
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Use refs to prevent unnecessary re-renders and debounce conflicts
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const isInitializedRef = useRef(false);
-  const isUpdatingUrlRef = useRef(false);
-
-  // Initialize filters from URL params with validation
-  const [filters, setFilters] = useState<TaskFiltersType>(() => {
-    const urlFilters = {
+  // Derive all values from URL params - single source of truth
+  const filters = useMemo<TaskFiltersType>(
+    () => ({
       startDate: searchParams.get('startDate') || '',
       endDate: searchParams.get('endDate') || '',
       status: searchParams.get('status') || '',
       priority: searchParams.get('priority') || '',
       objectiveId: searchParams.get('objectiveId') || '',
       goalId: searchParams.get('goalId') || '',
-    };
+    }),
+    [searchParams]
+  );
 
-    // Validate that objective belongs to goal if both are present
-    if (urlFilters.goalId && urlFilters.objectiveId) {
-      // This validation will be done after objectives are loaded
-      console.log('Both goal and objective filters found in URL');
-    }
+  const searchQuery = useMemo(
+    () => searchParams.get('search') || '',
+    [searchParams]
+  );
 
-    console.log('Initializing filters from URL:', urlFilters);
-    return urlFilters;
-  });
-
-  // Initialize search query from URL params
-  useEffect(() => {
-    if (!isInitializedRef.current) {
-      const queryFromUrl = searchParams.get('search') || '';
-      setSearchQuery(queryFromUrl);
-
-      const viewFromUrl = searchParams.get('view') as
-        | 'grid'
-        | 'list'
-        | 'calendar';
-      if (viewFromUrl && ['grid', 'list', 'calendar'].includes(viewFromUrl)) {
-        setViewMode(viewFromUrl);
-      }
-
-      isInitializedRef.current = true;
-    }
+  const viewMode = useMemo(() => {
+    const view = searchParams.get('view') as 'grid' | 'list' | 'calendar';
+    return ['grid', 'list', 'calendar'].includes(view) ? view : 'list';
   }, [searchParams]);
 
-  // Update URL when filters change - with proper debouncing
+  // Fixed: Use individual filter values as dependencies instead of the filters object
+  const startDate = searchParams.get('startDate') || '';
+  const endDate = searchParams.get('endDate') || '';
+  const status = searchParams.get('status') || '';
+  const priority = searchParams.get('priority') || '';
+  const objectiveId = searchParams.get('objectiveId') || '';
+  const goalId = searchParams.get('goalId') || '';
+
   useEffect(() => {
-    // Skip URL updates during initialization or if we're already updating
-    if (!isInitializedRef.current || isUpdatingUrlRef.current) {
-      return;
-    }
-
-    // Clear existing timeout
-    if (debounceTimeoutRef.current) {
-      clearTimeout(debounceTimeoutRef.current);
-    }
-
-    debounceTimeoutRef.current = setTimeout(() => {
-      const params = new URLSearchParams();
-
-      // Add non-empty filter values to URL
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value && value.trim()) {
-          params.set(key, value);
-        }
-      });
-
-      // Add search query if present
-      if (searchQuery && searchQuery.trim()) {
-        params.set('search', searchQuery.trim());
-      }
-
-      // Add view mode if not default
-      if (viewMode !== 'list') {
-        params.set('view', viewMode);
-      }
-
-      // Update URL without triggering navigation
-      const newSearch = params.toString();
-      const currentSearch = searchParams.toString();
-
-      if (newSearch !== currentSearch) {
-        isUpdatingUrlRef.current = true;
-        setSearchParams(params, { replace: true });
-
-        // Reset the flag after a brief delay
-        setTimeout(() => {
-          isUpdatingUrlRef.current = false;
-        }, 100);
-      }
-    }, 500); // Increased debounce time to 500ms
-
-    return () => {
-      if (debounceTimeoutRef.current) {
-        clearTimeout(debounceTimeoutRef.current);
-      }
-    };
-  }, [filters, searchQuery, viewMode, setSearchParams]);
-
-  // Fetch data when filters change - with debouncing
-  useEffect(() => {
-    if (!isInitializedRef.current) {
-      return;
-    }
-
-    const timeoutId = setTimeout(() => {
-      fetchTasks();
-      fetchStats();
-    }, 300); // Keep 300ms for data fetching
-
-    return () => clearTimeout(timeoutId);
-  }, [filters]);
+    fetchTasks();
+    fetchStats();
+  }, [startDate, endDate, status, priority, objectiveId, goalId]); // Use individual values instead of filters object
 
   const fetchTasks = async () => {
     try {
@@ -199,32 +119,55 @@ const Tasks = () => {
     }
   };
 
-  // Simplified filter handler without complex validation
-  const handleFiltersChange = useCallback((newFilters: TaskFiltersType) => {
-    console.log('Updating filters in Tasks component:', newFilters);
-    setFilters(newFilters);
-  }, []);
+  // Update URL params directly - no state management
+  const handleFiltersChange = useCallback(
+    (newFilters: TaskFiltersType) => {
+      const params = new URLSearchParams(searchParams);
 
-  // Enhanced search handler
-  const handleSearchChange = useCallback((query: string) => {
-    setSearchQuery(query);
-  }, []);
+      // Remove all existing filter params
+      Object.keys(filters).forEach((key) => params.delete(key));
 
-  // Enhanced view mode handler
-  const handleViewModeChange = useCallback(
-    (mode: 'grid' | 'list' | 'calendar') => {
-      setViewMode(mode);
+      // Add new non-empty filter values
+      Object.entries(newFilters).forEach(([key, value]) => {
+        if (value && value.trim()) {
+          params.set(key, value);
+        }
+      });
+
+      setSearchParams(params, { replace: true });
     },
-    []
+    [searchParams, setSearchParams, filters]
   );
 
-  // Initial data fetch
-  useEffect(() => {
-    if (isInitializedRef.current) {
-      fetchTasks();
-      fetchStats();
-    }
-  }, []); // Only run once on mount
+  const handleSearchChange = useCallback(
+    (query: string) => {
+      const params = new URLSearchParams(searchParams);
+
+      if (query && query.trim()) {
+        params.set('search', query.trim());
+      } else {
+        params.delete('search');
+      }
+
+      setSearchParams(params, { replace: true });
+    },
+    [searchParams, setSearchParams]
+  );
+
+  const handleViewModeChange = useCallback(
+    (mode: 'grid' | 'list' | 'calendar') => {
+      const params = new URLSearchParams(searchParams);
+
+      if (mode !== 'list') {
+        params.set('view', mode);
+      } else {
+        params.delete('view');
+      }
+
+      setSearchParams(params, { replace: true });
+    },
+    [searchParams, setSearchParams]
+  );
 
   // Add a callback to refresh parent data when task is created
   const handleTaskCreated = (newTask: Task) => {
@@ -334,6 +277,7 @@ const Tasks = () => {
     setSelectedTask(task);
     setShowEditModal(true);
   };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/10">

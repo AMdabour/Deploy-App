@@ -833,7 +833,7 @@ export const processNaturalLanguageCommandBasic = async (
 export const getActiveSuggestions = async (): Promise<ApiResponse<SuggestionsResponse>> => {
   try {
     const res = await api.get(`/api/ambient-ai/suggestions`);
-    return res.data.suggestions; // <-- Axios: use res.data, not res.json()
+    return res.data.data.suggestions; // <-- Axios: use res.data, not res.json()
   } catch (error) {
     console.error('Failed to fetch suggestions:', error);
     throw error;
