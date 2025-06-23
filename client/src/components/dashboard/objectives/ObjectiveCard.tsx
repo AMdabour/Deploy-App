@@ -100,7 +100,7 @@ const ObjectiveCard: React.FC<ObjectiveCardProps> = ({
     // Use a more robust navigation approach
     const params = new URLSearchParams();
     params.set('objectiveId', objective.id);
-    params.set('search', objective.title);
+    params.set('goalId', objective.goalId);
 
     navigate(`/dashboard/tasks?${params.toString()}`);
   };
