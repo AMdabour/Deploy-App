@@ -262,7 +262,7 @@ router.delete('/:id', requireAuth, async (req: Request, res: Response) => {
 
     const deleted = await storage.tasks.deleteTask(id);
 
-    if (deleted) {
+    if (!deleted) {
       return res.status(500).json({
         success: false,
         error: 'Failed to delete task',

@@ -586,6 +586,234 @@ ${prompt}`
   /**
    * Process natural language commands with enhanced NLP including roadmap creation
    */
+//   async processNaturalLanguage(text: string, user: DbUser, context?: any): Promise<NLProcessingResult> {
+//     try {
+//       const prompt = this.buildEnhancedNLProcessingPrompt(text, user, context);
+      
+//       const result = await this.model.generateContent([
+//         {
+//           text: `You are an intelligent task management assistant. Parse natural language commands related to scheduling, task management, goal creation, objective creation, and roadmap planning.
+
+// CRITICAL: You must respond with ONLY valid JSON, no other text.
+
+// Supported intents:
+// - add_task: Creating new tasks
+// - modify_task: Updating existing tasks  
+// - delete_task: Removing tasks
+// - schedule_task: Scheduling or rescheduling tasks
+// - create_goal: Creating new annual goals
+// - create_objective: Creating new monthly objectives
+// - create_roadmap: Creating complete yearly roadmaps with goals, objectives, and tasks
+// - ask_question: Information queries
+
+// For ROADMAPS, extract:
+// - prompt: the complete description of what the user wants to achieve
+// - description: detailed explanation of the desired outcome
+// - timeframe: when they want to accomplish this
+// - category: career|health|personal|financial|education|other
+
+// For GOALS, extract:
+// - title: goal name (required)
+// - description: detailed description
+// - category: career|health|personal|financial|education|other
+// - year: target year
+// - priority: low|medium|high|critical
+
+// For OBJECTIVES, extract:
+// - title: objective name (required)
+// - description: detailed description
+// - goal: related goal name (required)
+// - month: target month (1-12)
+// - year: target year
+
+// For TASKS, extract:
+// - title: task name (required)
+// - description: task details
+// - date: when to do it
+// - time: specific time
+// - duration: estimated minutes
+// - priority: low|medium|high|critical
+// - objective: related objective name
+// - goal: related goal name
+
+// JSON Schema:
+// {
+//   "intent": "add_task|modify_task|delete_task|schedule_task|create_goal|create_objective|create_roadmap|ask_question",
+//   "entities": {
+//     "title": "string",
+//     "description": "string",
+//     "prompt": "string",
+//     "category": "string",
+//     "year": number,
+//     "month": number,
+//     "priority": "string",
+//     "date": "string",
+//     "time": "string",
+//     "duration": number,
+//     "objective": "string",
+//     "goal": "string",
+//     "timeframe": "string"
+//   },
+//   "confidence": number,
+//   "response": "string"
+// }
+
+// Examples:
+// "Create a roadmap to become a senior developer this year" -> intent: create_roadmap
+// "I want to plan my fitness journey for 2024" -> intent: create_roadmap
+// "Build a complete plan to learn Python programming" -> intent: create_roadmap
+
+// USER INPUT: ${prompt}`
+//         }
+//       ]);
+
+//       const response = result.response.text();
+//       const cleanedResponse = this.extractJsonFromResponse(response);
+      
+//       const parsed = JSON.parse(cleanedResponse) as NLProcessingResult;
+//       this.validateNLProcessingResult(parsed);
+      
+//       return parsed;
+//     } catch (error) {
+//       console.error('Error in Gemini NL processing:', error);
+//       throw new Error(`Failed to process natural language: ${error instanceof Error ? error.message : String(error)}`);
+//     }
+//   }
+
+
+  // async processNaturalLanguage(text: string, user: DbUser, context?: any): Promise<NLProcessingResult> {
+  // try {
+  //   const prompt = this.buildEnhancedNLProcessingPrompt(text, user, context);
+    
+  //   const result = await this.model.generateContent([
+  //     {
+  //       text: `You are an intelligent task management assistant. Parse natural language commands related to scheduling, task management, goal creation, objective creation, and roadmap planning.
+
+  //       CRITICAL: You must respond with ONLY valid JSON, no other text.
+
+  //       For MODIFY_TASK commands, you MUST include:
+  //       - task: the task name/identifier to find
+  //       - field: the specific field to modify (title, priority, status, scheduledDate, scheduledTime, estimatedDuration, description, location)
+  //       - newValue: the new value for that field
+
+  //       Supported intents:
+  //       - add_task: Creating new tasks
+  //       - modify_task: Updating existing tasks  
+  //       - delete_task: Removing tasks
+  //       - schedule_task: Scheduling or rescheduling tasks
+  //       - create_goal: Creating new annual goals
+  //       - create_objective: Creating new monthly objectives
+  //       - create_roadmap: Creating complete yearly roadmaps with goals, objectives, and tasks
+  //       - ask_question: Information queries
+
+  //       For MODIFY_TASK examples:
+  //       "Change task title to new name" → {"intent": "modify_task", "entities": {"task": "old task name", "field": "title", "newValue": "new name"}}
+  //       "Move meeting to tomorrow" → {"intent": "modify_task", "entities": {"task": "meeting", "field": "scheduledDate", "newValue": "tomorrow"}}
+  //       "Set workout priority to high" → {"intent": "modify_task", "entities": {"task": "workout", "field": "priority", "newValue": "high"}}
+  //       "Mark project as completed" → {"intent": "modify_task", "entities": {"task": "project", "field": "status", "newValue": "completed"}}
+
+  //       For other commands, extract relevant entities:
+
+  //       ADD_TASK:
+  //       - title: task name (required)
+  //       - description: task details
+  //       - date: when to do it
+  //       - time: specific time
+  //       - duration: estimated minutes
+  //       - priority: low|medium|high|critical
+  //       - objective: related objective name
+  //       - goal: related goal name
+
+  //       CREATE_GOAL:
+  //       - title: goal name (required)
+  //       - description: detailed description
+  //       - category: career|health|personal|financial|education|other
+  //       - year: target year
+  //       - priority: low|medium|high|critical
+
+  //       CREATE_OBJECTIVE:
+  //       - title: objective name (required)
+  //       - description: detailed description
+  //       - goal: related goal name (required)
+  //       - month: target month (1-12)
+  //       - year: target year
+
+  //       CREATE_ROADMAP:
+  //       - prompt: the complete description
+  //       - description: detailed explanation
+  //       - timeframe: when they want to accomplish this
+  //       - category: career|health|personal|financial|education|other
+
+  //       JSON Schema:
+  //       {
+  //         "intent": "add_task|modify_task|delete_task|schedule_task|create_goal|create_objective|create_roadmap|ask_question",
+  //         "entities": {
+  //           // For modify_task (REQUIRED):
+  //           "task": "string - task identifier",
+  //           "field": "title|priority|status|scheduledDate|scheduledTime|estimatedDuration|description|location",
+  //           "newValue": "string - the new value",
+            
+  //           // For other commands:
+  //           "title": "string",
+  //           "description": "string",
+  //           "prompt": "string",
+  //           "category": "string",
+  //           "year": number,
+  //           "month": number,
+  //           "priority": "string",
+  //           "date": "string",
+  //           "time": "string",
+  //           "duration": number,
+  //           "objective": "string",
+  //           "goal": "string"
+  //         },
+  //         "confidence": number,
+  //         "response": "string"
+  //       }
+
+  //       Examples:
+  //       "Change task 'meeting' title to 'important meeting'" → 
+  //       {
+  //         "intent": "modify_task",
+  //         "entities": {
+  //           "task": "meeting",
+  //           "field": "title", 
+  //           "newValue": "important meeting"
+  //         },
+  //         "confidence": 0.9,
+  //         "response": "I'll change the task title to 'important meeting'"
+  //       }
+
+  //       "Move workout to tomorrow" →
+  //       {
+  //         "intent": "modify_task", 
+  //         "entities": {
+  //           "task": "workout",
+  //           "field": "scheduledDate",
+  //           "newValue": "tomorrow"
+  //         },
+  //         "confidence": 0.9,
+  //         "response": "I'll move your workout to tomorrow"
+  //       }
+
+  //       USER INPUT: ${prompt}`
+  //       }
+  //     ]);
+
+  //     const response = result.response.text();
+  //     const cleanedResponse = this.extractJsonFromResponse(response);
+      
+  //     const parsed = JSON.parse(cleanedResponse) as NLProcessingResult;
+  //     this.validateNLProcessingResult(parsed);
+      
+  //     return parsed;
+  //   } catch (error) {
+  //     console.error('Error in Gemini NL processing:', error);
+  //     const errorMessage = (error instanceof Error) ? error.message : String(error);
+  //     throw new Error(`Failed to process natural language: ${errorMessage}`);
+  //   }
+  // }
+
   async processNaturalLanguage(text: string, user: DbUser, context?: any): Promise<NLProcessingResult> {
     try {
       const prompt = this.buildEnhancedNLProcessingPrompt(text, user, context);
@@ -594,93 +822,198 @@ ${prompt}`
         {
           text: `You are an intelligent task management assistant. Parse natural language commands related to scheduling, task management, goal creation, objective creation, and roadmap planning.
 
-CRITICAL: You must respond with ONLY valid JSON, no other text.
+          CRITICAL: You must respond with ONLY valid JSON, no other text.
 
-Supported intents:
-- add_task: Creating new tasks
-- modify_task: Updating existing tasks  
-- delete_task: Removing tasks
-- schedule_task: Scheduling or rescheduling tasks
-- create_goal: Creating new annual goals
-- create_objective: Creating new monthly objectives
-- create_roadmap: Creating complete yearly roadmaps with goals, objectives, and tasks
-- ask_question: Information queries
+          For each command type, you MUST include specific required fields:
 
-For ROADMAPS, extract:
-- prompt: the complete description of what the user wants to achieve
-- description: detailed explanation of the desired outcome
-- timeframe: when they want to accomplish this
-- category: career|health|personal|financial|education|other
+          FOR MODIFY_TASK:
+          - task: the task name/identifier to find
+          - field: the specific field to modify (title, priority, status, scheduledDate, scheduledTime, estimatedDuration, description, location)
+          - newValue: the new value for that field
 
-For GOALS, extract:
-- title: goal name (required)
-- description: detailed description
-- category: career|health|personal|financial|education|other
-- year: target year
-- priority: low|medium|high|critical
+          FOR ADD_TASK:
+          - title: task name (REQUIRED)
+          - description: task details (optional)
+          - date: when to do it (optional, defaults to today)
+          - time: specific time (optional)
+          - duration: estimated minutes (optional, defaults to 30)
+          - priority: low|medium|high|critical (optional, defaults to medium)
+          - objective: related objective name (optional)
+          - goal: related goal name (optional)
 
-For OBJECTIVES, extract:
-- title: objective name (required)
-- description: detailed description
-- goal: related goal name (required)
-- month: target month (1-12)
-- year: target year
+          FOR DELETE_TASK:
+          - task: the task name/identifier to find (REQUIRED)
+          - confirmDelete: always true for delete commands
 
-For TASKS, extract:
-- title: task name (required)
-- description: task details
-- date: when to do it
-- time: specific time
-- duration: estimated minutes
-- priority: low|medium|high|critical
-- objective: related objective name
-- goal: related goal name
+          FOR CREATE_GOAL:
+          - title: goal name (REQUIRED)
+          - description: detailed description (REQUIRED)
+          - category: career|health|personal|financial|education|other (REQUIRED)
+          - year: target year (optional, defaults to current year)
+          - priority: low|medium|high|critical (optional, defaults to medium)
 
-JSON Schema:
-{
-  "intent": "add_task|modify_task|delete_task|schedule_task|create_goal|create_objective|create_roadmap|ask_question",
-  "entities": {
-    "title": "string",
-    "description": "string",
-    "prompt": "string",
-    "category": "string",
-    "year": number,
-    "month": number,
-    "priority": "string",
-    "date": "string",
-    "time": "string",
-    "duration": number,
-    "objective": "string",
-    "goal": "string",
-    "timeframe": "string"
-  },
-  "confidence": number,
-  "response": "string"
-}
+          FOR CREATE_OBJECTIVE:
+          - title: objective name (REQUIRED)
+          - description: detailed description (REQUIRED)
+          - goal: related goal name (REQUIRED)
+          - month: target month 1-12 (REQUIRED)
+          - year: target year (optional, defaults to current year)
 
-Examples:
-"Create a roadmap to become a senior developer this year" -> intent: create_roadmap
-"I want to plan my fitness journey for 2024" -> intent: create_roadmap
-"Build a complete plan to learn Python programming" -> intent: create_roadmap
+          FOR CREATE_ROADMAP:
+          - prompt: the complete description (REQUIRED)
+          - description: detailed explanation of what user wants to achieve (REQUIRED)
+          - timeframe: when they want to accomplish this (optional)
+          - category: career|health|personal|financial|education|other (optional, defaults to personal)
 
-USER INPUT: ${prompt}`
-        }
-      ]);
+          FOR SCHEDULE_TASK:
+          - task: the task name/identifier to find (REQUIRED)
+          - date: new date to schedule (REQUIRED)
+          - time: new time to schedule (optional)
 
-      const response = result.response.text();
-      const cleanedResponse = this.extractJsonFromResponse(response);
-      
-      const parsed = JSON.parse(cleanedResponse) as NLProcessingResult;
-      this.validateNLProcessingResult(parsed);
-      
-      return parsed;
-    } catch (error) {
-      console.error('Error in Gemini NL processing:', error);
-      throw new Error(`Failed to process natural language: ${error instanceof Error ? error.message : String(error)}`);
+          FOR ASK_QUESTION:
+          - questionType: productivity|schedule|goals|tasks|general (REQUIRED)
+          - query: the specific question being asked (REQUIRED)
+
+          Supported intents:
+          - add_task: Creating new tasks
+          - modify_task: Updating existing tasks  
+          - delete_task: Removing tasks
+          - schedule_task: Scheduling or rescheduling tasks
+          - create_goal: Creating new annual goals
+          - create_objective: Creating new monthly objectives
+          - create_roadmap: Creating complete yearly roadmaps with goals, objectives, and tasks
+          - ask_question: Information queries
+
+          JSON Schema:
+          {
+            "intent": "add_task|modify_task|delete_task|schedule_task|create_goal|create_objective|create_roadmap|ask_question",
+            "entities": {
+              // Fields based on intent - see requirements above
+            },
+            "confidence": number (0-1),
+            "response": "string - friendly response explaining what you understood"
+          }
+
+          EXAMPLES:
+
+          "Create a task to review project proposal" →
+          {
+            "intent": "add_task",
+            "entities": {
+              "title": "Review project proposal",
+              "description": "Review and analyze the project proposal document",
+              "priority": "medium",
+              "duration": 60
+            },
+            "confidence": 0.9,
+            "response": "I'll create a task to review the project proposal"
+          }
+
+          "Change task 'meeting' title to 'important meeting'" → 
+          {
+            "intent": "modify_task",
+            "entities": {
+              "task": "meeting",
+              "field": "title", 
+              "newValue": "important meeting"
+            },
+            "confidence": 0.9,
+            "response": "I'll change the task title to 'important meeting'"
+          }
+
+          "Delete my workout task" →
+          {
+            "intent": "delete_task",
+            "entities": {
+              "task": "workout",
+              "confirmDelete": true
+            },
+            "confidence": 0.9,
+            "response": "I'll delete your workout task"
+          }
+
+          "Create a goal to learn programming this year" →
+          {
+            "intent": "create_goal",
+            "entities": {
+              "title": "Learn Programming",
+              "description": "Master programming fundamentals and build projects to advance my career",
+              "category": "career",
+              "year": 2025,
+              "priority": "high"
+            },
+            "confidence": 0.9,
+            "response": "I'll create a goal to learn programming for 2025"
+          }
+
+          "Create an objective for January to complete Python basics" →
+          {
+            "intent": "create_objective",
+            "entities": {
+              "title": "Complete Python Basics",
+              "description": "Learn Python fundamentals including syntax, data structures, and basic programming concepts",
+              "goal": "Learn Programming",
+              "month": 1,
+              "year": 2025
+            },
+            "confidence": 0.9,
+            "response": "I'll create an objective to complete Python basics for January"
+          }
+
+          "Move workout to tomorrow" →
+          {
+            "intent": "schedule_task",
+            "entities": {
+              "task": "workout",
+              "date": "tomorrow"
+            },
+            "confidence": 0.9,
+            "response": "I'll reschedule your workout to tomorrow"
+          }
+
+          "Create a roadmap to become a senior developer" →
+          {
+            "intent": "create_roadmap",
+            "entities": {
+              "prompt": "Create a roadmap to become a senior developer",
+              "description": "Develop advanced programming skills, leadership abilities, and technical expertise to reach senior developer level",
+              "timeframe": "this year",
+              "category": "career"
+            },
+            "confidence": 0.9,
+            "response": "I'll create a comprehensive roadmap to help you become a senior developer"
+          }
+
+          "What are my tasks for today?" →
+          {
+            "intent": "ask_question",
+            "entities": {
+              "questionType": "tasks",
+              "query": "What are my tasks for today?"
+            },
+            "confidence": 0.8,
+            "response": "I'll show you your tasks for today"
+          }
+
+          USER INPUT: ${prompt}`
+          }
+        ]);
+
+        const response = result.response.text();
+        const cleanedResponse = this.extractJsonFromResponse(response);
+        
+        const parsed = JSON.parse(cleanedResponse) as NLProcessingResult;
+        this.validateNLProcessingResult(parsed);
+        
+        return parsed;
+      } catch (error) {
+        console.error('Error in Gemini NL processing:', error);
+        const errorMessage = (error instanceof Error) ? error.message : String(error);
+        throw new Error(`Failed to process natural language: ${errorMessage}`);
     }
   }
 
-  /**
+/**
    * Create a complete roadmap from a natural language prompt
    */
   async createRoadmap(prompt: string, user: DbUser): Promise<RoadmapGenerationResult> {

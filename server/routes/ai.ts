@@ -714,374 +714,625 @@ async function executeRoadmapCreation(userId: string, roadmap: any): Promise<any
   }
 }
 
-        async function executeAICreateRoadmap(userId: string, entities: any): Promise<any> {
-          try {
-            const { prompt, description, autoExecute } = entities;
+  // async function executeAICreateRoadmap(userId: string, entities: any): Promise<any> {
+  //   try {
+  //     const { prompt, description, autoExecute } = entities;
 
-            if (!prompt && !description) {
-              return { 
-                success: false, 
-                message: 'Please provide a description or prompt for the roadmap you want to create' 
-              };
-            }
+  //     if (!prompt && !description) {
+  //       return { 
+  //         success: false, 
+  //         message: 'Please provide a description or prompt for the roadmap you want to create' 
+  //       };
+  //     }
 
-            // Get user data
-            const user = await storage.users.getUserById(userId);
-            if (!user) {
-              return {
-                success: false,
-                message: 'User not found'
-              };
-            }
+  //     // Get user data
+  //     const user = await storage.users.getUserById(userId);
+  //     if (!user) {
+  //       return {
+  //         success: false,
+  //         message: 'User not found'
+  //       };
+  //     }
 
-            // Use the prompt from entities, fallback to description
-            const roadmapPrompt = prompt || description || '';
+  //     // Use the prompt from entities, fallback to description
+  //     const roadmapPrompt = prompt || description || '';
 
-            // Generate roadmap using AI Factory with automatic fallback
-            const roadmapResult = await aiServiceFactory.executeWithFallback(
-              async (service) => await service.createRoadmap(roadmapPrompt, user)
-            );
+  //     // Generate roadmap using AI Factory with automatic fallback
+  //     const roadmapResult = await aiServiceFactory.executeWithFallback(
+  //       async (service) => await service.createRoadmap(roadmapPrompt, user)
+  //     );
 
-            // Auto-execute if specified or if confidence is high
-            const shouldAutoExecute = autoExecute || (roadmapResult.confidence > 0.8);
-            
-            let executionResult = null;
-            if (shouldAutoExecute) {
-              executionResult = await executeRoadmapCreation(userId, roadmapResult);
-            }
+  //     // Auto-execute if specified or if confidence is high
+  //     const shouldAutoExecute = autoExecute || (roadmapResult.confidence > 0.8);
+      
+  //     let executionResult = null;
+  //     if (shouldAutoExecute) {
+  //       executionResult = await executeRoadmapCreation(userId, roadmapResult);
+  //     }
 
-            // Store AI insight
-            await storage.insights.createInsight({
-              userId,
-              insightType: 'goal_progress_pattern',
-              data: {
-                roadmapPrompt,
-                generatedGoal: roadmapResult.goal.title,
-                objectiveCount: roadmapResult.objectives.length,
-                taskCount: roadmapResult.tasks.length,
-                aiConfidence: roadmapResult.confidence,
-                aiProvider: getCurrentAIProvider(),
-                autoExecuted: shouldAutoExecute,
-                executedViaCommand: true,
-                generatedAt: new Date().toISOString()
-              },
-              confidence: roadmapResult.confidence.toString(),
-            });
+  //     // Store AI insight
+  //     await storage.insights.createInsight({
+  //       userId,
+  //       insightType: 'goal_progress_pattern',
+  //       data: {
+  //         roadmapPrompt,
+  //         generatedGoal: roadmapResult.goal.title,
+  //         objectiveCount: roadmapResult.objectives.length,
+  //         taskCount: roadmapResult.tasks.length,
+  //         aiConfidence: roadmapResult.confidence,
+  //         aiProvider: getCurrentAIProvider(),
+  //         autoExecuted: shouldAutoExecute,
+  //         executedViaCommand: true,
+  //         generatedAt: new Date().toISOString()
+  //       },
+  //       confidence: roadmapResult.confidence.toString(),
+  //     });
 
-            let message = '';
-            if (shouldAutoExecute && executionResult?.success) {
-              message = `Roadmap created and executed successfully! Generated "${roadmapResult.goal.title}" with ${roadmapResult.objectives.length} objectives and ${roadmapResult.tasks.length} tasks using ${getCurrentAIProvider()}.`;
-            } else if (shouldAutoExecute && executionResult && !executionResult.success) {
-              message = `Roadmap generated successfully but execution failed: ${executionResult.message}`;
-            } else {
-              message = `Roadmap "${roadmapResult.goal.title}" generated successfully using ${getCurrentAIProvider()}. Would you like me to create it in your account?`;
-            }
+  //     let message = '';
+  //     if (shouldAutoExecute && executionResult?.success) {
+  //       message = `Roadmap created and executed successfully! Generated "${roadmapResult.goal.title}" with ${roadmapResult.objectives.length} objectives and ${roadmapResult.tasks.length} tasks using ${getCurrentAIProvider()}.`;
+  //     } else if (shouldAutoExecute && executionResult && !executionResult.success) {
+  //       message = `Roadmap generated successfully but execution failed: ${executionResult.message}`;
+  //     } else {
+  //       message = `Roadmap "${roadmapResult.goal.title}" generated successfully using ${getCurrentAIProvider()}. Would you like me to create it in your account?`;
+  //     }
 
-            return {
-              success: true,
-              message,
-              data: { 
-                roadmap: roadmapResult,
-                execution: executionResult,
-                provider: getCurrentAIProvider(),
-                autoExecuted: shouldAutoExecute
-              }
-            };
-          } catch (error) {
-            console.error('Create roadmap command error:', error);
-            return {
-              success: false,
-              message: 'Failed to create roadmap',
-              error: error instanceof Error ? error.message : 'Unknown error'
-            };
-          }
-        }
+  //     return {
+  //       success: true,
+  //       message,
+  //       data: { 
+  //         roadmap: roadmapResult,
+  //         execution: executionResult,
+  //         provider: getCurrentAIProvider(),
+  //         autoExecuted: shouldAutoExecute
+  //       }
+  //     };
+  //   } catch (error) {
+  //     console.error('Create roadmap command error:', error);
+  //     return {
+  //       success: false,
+  //       message: 'Failed to create roadmap',
+  //       error: error instanceof Error ? error.message : 'Unknown error'
+  //     };
+  //   }
+  // }
 
         // ✅ NEW: Add entity transformation function
-export function transformModifyTaskEntities(entities: any): any {
-  console.log('🔍 Transforming entities:', entities);
+// export function transformModifyTaskEntities(entities: any): any {
+//   console.log('🔍 Transforming entities:', entities);
   
-  const transformed: any = {};
+//   const transformed: any = {};
 
-  // ✅ Extract task identifier from various fields
-  if (entities.original_title) {
-    transformed.taskIdentifier = entities.original_title;
-    transformed.title = entities.original_title;
-  } else if (entities.task_title) {
-    transformed.taskIdentifier = entities.task_title;
-    transformed.title = entities.task_title;
-  } else if (entities.task) {
-    transformed.taskIdentifier = entities.task;
-    transformed.title = entities.task;
-  } else if (entities.task_name) {
-    transformed.taskIdentifier = entities.task_name;
-    transformed.title = entities.task_name;
+//   // ✅ Extract task identifier from various fields
+//   if (entities.original_title || entities.title) {
+//     transformed.taskIdentifier = "title";
+//     transformed.title = entities.original_title;
+//   } else if (entities.task_title) {
+//     transformed.taskIdentifier = entities.task_title;
+//     transformed.title = entities.task_title;
+//   } else if (entities.task) {
+//     transformed.taskIdentifier = entities.task;
+//     transformed.title = entities.task;
+//   } else if (entities.task_name) {
+//     transformed.taskIdentifier = entities.task_name;
+//     transformed.title = entities.task_name;
+//   }
+
+//   // ✅ Detect what field is being changed and set field/newValue
+//   if (entities.title && entities.original_title && entities.title !== entities.original_title) {
+//     transformed.field = 'title';
+//     transformed.newValue = entities.title;
+//   } else if (entities.title && entities.task && entities.title !== entities.task) {
+//     transformed.field = 'title';
+//     transformed.newValue = entities.title;
+//   } else if (entities.priority) {
+//     transformed.field = 'priority';
+//     transformed.newValue = entities.priority;
+//   } else if (entities.status) {
+//     transformed.field = 'status';
+//     transformed.newValue = entities.status;
+//   } else if (entities.scheduled_date || entities.date) {
+//     transformed.field = 'scheduledDate';
+//     transformed.newValue = entities.scheduled_date || entities.date;
+//   } else if (entities.scheduled_time || entities.time) {
+//     transformed.field = 'scheduledTime';
+//     transformed.newValue = entities.scheduled_time || entities.time;
+//   } else if (entities.duration || entities.estimated_duration) {
+//     transformed.field = 'estimatedDuration';
+//     transformed.newValue = entities.duration || entities.estimated_duration;
+//   } else if (entities.description) {
+//     transformed.field = 'description';
+//     transformed.newValue = entities.description;
+//   } else if (entities.location) {
+//     transformed.field = 'location';
+//     transformed.newValue = entities.location;
+//   }
+
+//   // ✅ If no specific field detected, try to infer from entities
+//   if (!transformed.field || !transformed.newValue) {
+//     // Copy all entity fields for fallback processing
+//     Object.assign(transformed, entities);
+//   }
+
+//   console.log('✅ Final transformed entities:', transformed);
+//   return transformed;
+// }
+
+export function transformModifyTaskEntities(entities: any): any {
+  console.log('🔍 Transforming entities:', JSON.stringify(entities, null, 2));
+  
+  const transformed: any = {
+    originalText: entities.originalText // Preserve original text for fallback
+  };
+
+  // ✅ STEP 1: Extract task identifier from various fields
+  const taskIdentifiers = [
+    entities.original_title,
+    entities.task_title, 
+    entities.task,
+    entities.task_name,
+    entities.title // Only use title as identifier if it's clearly the original task name
+  ].filter(Boolean);
+
+  if (taskIdentifiers.length > 0) {
+    transformed.taskIdentifier = taskIdentifiers[0];
+    transformed.title = taskIdentifiers[0]; // For finding the task
   }
 
-  // ✅ Detect what field is being changed and set field/newValue
-  if (entities.title && entities.original_title && entities.title !== entities.original_title) {
-    transformed.field = 'title';
-    transformed.newValue = entities.title;
-  } else if (entities.title && entities.task && entities.title !== entities.task) {
-    transformed.field = 'title';
-    transformed.newValue = entities.title;
-  } else if (entities.priority) {
-    transformed.field = 'priority';
-    transformed.newValue = entities.priority;
-  } else if (entities.status) {
-    transformed.field = 'status';
-    transformed.newValue = entities.status;
-  } else if (entities.scheduled_date || entities.date) {
-    transformed.field = 'scheduledDate';
-    transformed.newValue = entities.scheduled_date || entities.date;
-  } else if (entities.scheduled_time || entities.time) {
-    transformed.field = 'scheduledTime';
-    transformed.newValue = entities.scheduled_time || entities.time;
-  } else if (entities.duration || entities.estimated_duration) {
-    transformed.field = 'estimatedDuration';
-    transformed.newValue = entities.duration || entities.estimated_duration;
-  } else if (entities.description) {
-    transformed.field = 'description';
-    transformed.newValue = entities.description;
-  } else if (entities.location) {
-    transformed.field = 'location';
-    transformed.newValue = entities.location;
+  // ✅ STEP 2: Smart field detection based on entity content and original text
+  let detectedField = '';
+  let detectedValue = '';
+
+  // Check if this is explicitly a title change
+  if (entities.originalText) {
+    const text = entities.originalText.toLowerCase();
+    
+    // Title change patterns
+    if (text.includes('change') && text.includes('title') && entities.title) {
+      detectedField = 'title';
+      detectedValue = entities.title;
+    }
+    // Rename patterns
+    else if ((text.includes('rename') || text.includes('change name')) && entities.title) {
+      detectedField = 'title';
+      detectedValue = entities.title;
+    }
+    // Priority change patterns
+    else if (text.includes('priority') && entities.priority) {
+      detectedField = 'priority';
+      detectedValue = entities.priority;
+    }
+    // Status change patterns  
+    else if ((text.includes('mark') || text.includes('status')) && entities.status) {
+      detectedField = 'status';
+      detectedValue = entities.status;
+    }
+    // Date/schedule change patterns
+    else if ((text.includes('move') || text.includes('reschedule') || text.includes('date')) && (entities.date || entities.scheduled_date)) {
+      detectedField = 'scheduledDate';
+      detectedValue = entities.date || entities.scheduled_date;
+    }
+    // Time change patterns
+    else if (text.includes('time') && (entities.time || entities.scheduled_time)) {
+      detectedField = 'scheduledTime';
+      detectedValue = entities.time || entities.scheduled_time;
+    }
+    // Duration change patterns
+    else if (text.includes('duration') && (entities.duration || entities.estimated_duration)) {
+      detectedField = 'estimatedDuration';
+      detectedValue = entities.duration || entities.estimated_duration;
+    }
+    // Description change patterns
+    else if (text.includes('description') && entities.description) {
+      detectedField = 'description';
+      detectedValue = entities.description;
+    }
+    // Location change patterns
+    else if ((text.includes('location') || text.includes('place')) && entities.location) {
+      detectedField = 'location';
+      detectedValue = entities.location;
+    }
   }
 
-  // ✅ If no specific field detected, try to infer from entities
-  if (!transformed.field || !transformed.newValue) {
-    // Copy all entity fields for fallback processing
-    Object.assign(transformed, entities);
+  // ✅ STEP 3: Fallback to direct entity mapping if pattern detection failed
+  if (!detectedField || !detectedValue) {
+    console.log('🔄 Pattern detection failed, using direct entity mapping...');
+    
+    // Use explicit field/newValue if available
+    if (entities.field && entities.newValue) {
+      detectedField = entities.field;
+      detectedValue = entities.newValue;
+    }
+    // Otherwise try to infer from available entities
+    else {
+      const fieldMappings = [
+        { condition: entities.priority, field: 'priority', value: entities.priority },
+        { condition: entities.status, field: 'status', value: entities.status },
+        { condition: entities.scheduled_date || entities.date, field: 'scheduledDate', value: entities.scheduled_date || entities.date },
+        { condition: entities.scheduled_time || entities.time, field: 'scheduledTime', value: entities.scheduled_time || entities.time },
+        { condition: entities.duration || entities.estimated_duration, field: 'estimatedDuration', value: entities.duration || entities.estimated_duration },
+        { condition: entities.description, field: 'description', value: entities.description },
+        { condition: entities.location, field: 'location', value: entities.location }
+      ];
+
+      for (const mapping of fieldMappings) {
+        if (mapping.condition) {
+          detectedField = mapping.field;
+          detectedValue = mapping.value;
+          break;
+        }
+      }
+    }
   }
 
-  console.log('✅ Final transformed entities:', transformed);
+  // ✅ STEP 4: Set the detected field and value
+  if (detectedField && detectedValue) {
+    transformed.field = detectedField;
+    transformed.newValue = detectedValue;
+  }
+
+  // ✅ STEP 5: Copy any remaining entities for fallback processing
+  Object.keys(entities).forEach(key => {
+    if (!transformed[key] && entities[key]) {
+      transformed[key] = entities[key];
+    }
+  });
+
+  console.log('✅ Final transformed entities:', JSON.stringify(transformed, null, 2));
   return transformed;
 }
 
 // Enhanced executeAICommand function to support roadmap creation
-async function executeAICommand(userId: string, nlResult: any): Promise<any> {
+// async function executeAICommand(userId: string, nlResult: any): Promise<any> {
+//   try {
+//     switch (nlResult.intent) {
+//       case 'add_task':
+//         return await executeAIAddTask(userId, nlResult.entities);
+//       case 'create_goal':
+//         return await executeAICreateGoal(userId, nlResult.entities);
+//       case 'create_objective':
+//         return await executeAICreateObjective(userId, nlResult.entities);
+//       case 'create_roadmap':
+//         return await executeAICreateRoadmap(userId, nlResult.entities);
+//       case 'modify_task':
+//         try {
+//           console.log('🔧 Processing modify task with entities:', nlResult.entities);
+          
+//           // ✅ Transform entities to match expected format
+//           const transformedEntities = transformModifyTaskEntities(nlResult.entities);
+          
+//           console.log('🔄 Transformed entities:', transformedEntities);
+          
+//           const modifyResult = await executeAIModifyTask(userId, transformedEntities);
+          
+//           return {
+//             success: true,
+//             data: {
+//               parsed: nlResult,
+//               execution: modifyResult, // Use 'execution' instead of 'result'
+//               response: modifyResult.message
+//             }
+//           };
+//         } catch (error) {
+//           console.error('Modify task execution error:', error);
+//           return {
+//             success: false,
+//             data: {
+//               parsed: nlResult,
+//               execution: { success: false, message: 'Failed to modify task' },
+//               response: 'Failed to modify task'
+//             }
+//           };
+//         }
+//       case 'delete_task':
+//         return await executeAIDeleteTask(userId, nlResult.entities);
+//       case 'schedule_task':
+//         return await executeAIScheduleTask(userId, nlResult.entities);
+//       case 'ask_question':
+//         return await executeAIQuestion(userId, nlResult.entities);
+//       default:
+//         return {
+//           success: false,
+//           message: 'Unknown command intent'
+//         };
+//     }
+//   } catch (error) {
+//     return {
+//       success: false,
+//       message: 'Failed to execute command',
+//       error: error instanceof Error ? error.message : 'Failed to execute command'
+//     };
+//   }
+// }
+
+// async function executeAICommand(userId: string, nlResult: any): Promise<any> {
+//   try {
+//     switch (nlResult.intent) {
+//       case 'add_task':
+//         return await executeAIAddTask(userId, nlResult.entities);
+//       case 'create_goal':
+//         return await executeAICreateGoal(userId, nlResult.entities);
+//       case 'create_objective':
+//         return await executeAICreateObjective(userId, nlResult.entities);
+//       case 'create_roadmap':
+//         return await executeAICreateRoadmap(userId, nlResult.entities);
+//       case 'modify_task':
+//         console.log('🔧 Processing modify task with entities:', nlResult.entities);
+        
+//         // ✅ Work directly with the well-structured entities from Gemini
+//         const modifyResult = await executeAIModifyTaskDirect(userId, nlResult.entities);
+        
+//         return {
+//           success: true,
+//           data: {
+//             parsed: nlResult,
+//             execution: modifyResult,
+//             response: modifyResult.message
+//           }
+//         };
+//       case 'delete_task':
+//         return await executeAIDeleteTask(userId, nlResult.entities);
+//       case 'schedule_task':
+//         return await executeAIScheduleTask(userId, nlResult.entities);
+//       case 'ask_question':
+//         return await executeAIQuestion(userId, nlResult.entities);
+//       default:
+//         return {
+//           success: false,
+//           message: 'Unknown command intent'
+//         };
+//     }
+//   } catch (error) {
+//     return {
+//       success: false,
+//       message: 'Failed to execute command',
+//       error: error instanceof Error ? error.message : 'Failed to execute command'
+//     };
+//   }
+// }
+
+// ✅ NEW: Simplified executeAIModifyTaskDirect function
+async function executeAIModifyTaskDirect(userId: string, entities: any): Promise<any> {
   try {
-    switch (nlResult.intent) {
-      case 'add_task':
-        return await executeAIAddTask(userId, nlResult.entities);
-      case 'create_goal':
-        return await executeAICreateGoal(userId, nlResult.entities);
-      case 'create_objective':
-        return await executeAICreateObjective(userId, nlResult.entities);
-      case 'create_roadmap':
-        return await executeAICreateRoadmap(userId, nlResult.entities);
-      case 'modify_task':
-        try {
-          console.log('🔧 Processing modify task with entities:', nlResult.entities);
-          
-          // ✅ Transform entities to match expected format
-          const transformedEntities = transformModifyTaskEntities(nlResult.entities);
-          
-          console.log('🔄 Transformed entities:', transformedEntities);
-          
-          const modifyResult = await executeAIModifyTask(userId, transformedEntities);
-          
-          return {
-            success: true,
-            data: {
-              parsed: nlResult,
-              execution: modifyResult, // Use 'execution' instead of 'result'
-              response: modifyResult.message
-            }
-          };
-        } catch (error) {
-          console.error('Modify task execution error:', error);
-          return {
-            success: false,
-            data: {
-              parsed: nlResult,
-              execution: { success: false, message: 'Failed to modify task' },
-              response: 'Failed to modify task'
-            }
-          };
-        }
-      case 'delete_task':
-        return await executeAIDeleteTask(userId, nlResult.entities);
-      case 'schedule_task':
-        return await executeAIScheduleTask(userId, nlResult.entities);
-      case 'ask_question':
-        return await executeAIQuestion(userId, nlResult.entities);
-      default:
-        return {
-          success: false,
-          message: 'Unknown command intent'
-        };
-    }
-  } catch (error) {
-    return {
-      success: false,
-      message: 'Failed to execute command',
-      error: error instanceof Error ? error.message : 'Failed to execute command'
-    };
-  }
-}
+    console.log('🔍 ModifyTask entities received:', JSON.stringify(entities, null, 2));
+    
+    const { task, field, newValue } = entities;
 
-async function executeAICreateGoal(userId: string, entities: any): Promise<any> {
-  try {
-    const { title, description, category, year, priority } = entities;
-
-    if (!title) {
-      return { success: false, message: 'Goal title is required' };
-    }
-
-    const goal = await storage.goals.createGoal({
-      userId,
-      title,
-      description: description || '',
-      category: category || 'personal',
-      targetYear: year || new Date().getFullYear(),
-      priority: priority || 'medium',
-      status: 'active',
-    });
-
-    return {
-      success: true,
-      message: `Goal "${title}" created successfully`,
-      data: { goal }
-    };
-  } catch (error) {
-    console.error('Create goal error:', error);
-    return {
-      success: false,
-      message: 'Failed to create goal'
-    };
-  }
-}
-
-async function executeAICreateObjective(userId: string, entities: any): Promise<any> {
-  try {
-    const { title, description, goal, month, year } = entities;
-
-    if (!title) {
-      return { success: false, message: 'Objective title is required' };
-    }
-
-    // Find goal by name
-    let goalId = null;
-    if (goal) {
-      const goals = await storage.goals.getUserGoals(userId);
-      const matchedGoal = goals.find(g => 
-        g.title.toLowerCase().includes(goal.toLowerCase())
-      );
-      if (matchedGoal) {
-        goalId = matchedGoal.id;
-      }
-    }
-
-    if (!goalId) {
-      return { 
-        success: false, 
-        message: 'Please specify which goal this objective belongs to, or create a goal first' 
+    // ✅ STEP 1: Validate required fields
+    if (!task) {
+      return {
+        success: false,
+        message: 'Please specify which task to modify. For example: "Change meeting title to new name"'
       };
     }
 
-    const objective = await storage.objectives.createObjective({
-      userId,
-      goalId,
-      title,
-      description: description || '',
-      targetMonth: month || new Date().getMonth() + 1,
-      targetYear: year || new Date().getFullYear(),
-      keyResults: [],
-      status: 'active',
-    });
+    if (!field || !newValue) {
+      return {
+        success: false,
+        message: 'Please specify what field to change and the new value. For example: "Change priority to high"'
+      };
+    }
+
+    console.log(`🔍 Looking for task: "${task}", changing field: "${field}" to: "${newValue}"`);
+
+    // ✅ STEP 2: Find the task
+    const foundTask = await findTaskByTitle(userId, task);
+    
+    if (!foundTask) {
+      const userTasks = await storage.tasks.getUserTasks(userId, new Date(0), new Date());
+      const taskTitles = userTasks.slice(0, 5).map(t => `"${t.title}"`).join(', ');
+      
+      return {
+        success: false,
+        message: `❌ I couldn't find a task matching "${task}". ${userTasks.length > 0 ? `Available tasks: ${taskTitles}${userTasks.length > 5 ? '...' : ''}` : 'You have no tasks yet.'}`
+      };
+    }
+
+    console.log(`✅ Found task: "${foundTask.title}"`);
+
+    // ✅ STEP 3: Normalize and validate the field and value
+    const normalizedField = normalizeField(field);
+    const normalizedValue = await normalizeValue(normalizedField, newValue);
+
+    if (!normalizedField) {
+      return {
+        success: false,
+        message: `❌ Cannot modify "${field}". Supported fields: title, description, priority, date, time, duration, status, location`
+      };
+    }
+
+    // ✅ STEP 4: Validate the value
+    const validation = validateFieldValue(normalizedField, normalizedValue);
+    if (!validation.valid) {
+      return {
+        success: false,
+        message: validation.message
+      };
+    }
+
+    // ✅ STEP 5: Update the task
+    const updateData: any = {};
+    updateData[normalizedField] = normalizedValue;
+
+    console.log(`🔧 Updating task "${foundTask.title}" - ${normalizedField}: ${normalizedValue}`);
+    
+    const updatedTask = await storage.tasks.updateTask(foundTask.id, updateData);
 
     return {
       success: true,
-      message: `Objective "${title}" created successfully under your goal`,
-      data: { objective }
+      message: `✅ Successfully updated "${foundTask.title}" - ${getFieldDisplayName(normalizedField)} changed to "${getValueDisplayText(normalizedField, normalizedValue)}"`,
+      data: { task: updatedTask }
     };
   } catch (error) {
-    console.error('Create objective error:', error);
+    console.error('❌ Modify task error:', error);
     return {
       success: false,
-      message: 'Failed to create objective'
+      message: 'Failed to modify task: ' + (error instanceof Error ? error.message : 'Unknown error')
     };
   }
 }
 
-async function executeAIAddTask(userId: string, entities: any): Promise<any> {
-  try {
-    const { title, description, date, time, duration, priority, objective, goal } = entities;
+// async function executeAICreateGoal(userId: string, entities: any): Promise<any> {
+//   try {
+//     const { title, description, category, year, priority } = entities;
 
-    if (!title) {
-      return { success: false, message: 'Task title is required' };
-    }
+//     if (!title) {
+//       return { success: false, message: 'Goal title is required' };
+//     }
 
-    // Parse date
-    let scheduledDate = new Date();
-    if (date) {
-      const parsedDate = parseDate(date);
-      if (parsedDate) {
-        scheduledDate = parsedDate;
-      }
-    }
+//     const goal = await storage.goals.createGoal({
+//       userId,
+//       title,
+//       description: description || '',
+//       category: category || 'personal',
+//       targetYear: year || new Date().getFullYear(),
+//       priority: priority || 'medium',
+//       status: 'active',
+//     });
 
-    // Find objective or goal if specified
-    let objectiveId = null;
-    let goalId = null;
+//     return {
+//       success: true,
+//       message: `Goal "${title}" created successfully`,
+//       data: { goal }
+//     };
+//   } catch (error) {
+//     console.error('Create goal error:', error);
+//     return {
+//       success: false,
+//       message: 'Failed to create goal'
+//     };
+//   }
+// }
 
-    if (objective) {
-      const objectives = await storage.objectives.getUserObjectives(userId);
-      const matchedObjective = objectives.find(obj => 
-        obj.title.toLowerCase().includes(objective.toLowerCase())
-      );
-      if (matchedObjective) {
-        objectiveId = matchedObjective.id;
-        goalId = matchedObjective.goalId;
-      }
-    }
+// async function executeAICreateObjective(userId: string, entities: any): Promise<any> {
+//   try {
+//     const { title, description, goal, month, year } = entities;
 
-    if (!objectiveId && goal) {
-      const goals = await storage.goals.getUserGoals(userId);
-      const matchedGoal = goals.find(g => 
-        g.title.toLowerCase().includes(goal.toLowerCase())
-      );
-      if (matchedGoal) {
-        goalId = matchedGoal.id;
-      }
-    }
+//     if (!title) {
+//       return { success: false, message: 'Objective title is required' };
+//     }
 
-    // Create task
-    const task = await storage.tasks.createTask({
-      userId,
-      objectiveId,
-      goalId,
-      title,
-      description: description || '',
-      scheduledDate,
-      scheduledTime: time || null,
-      estimatedDuration: duration || 30,
-      priority: priority || 'medium',
-      status: 'pending',
-      tags: [],
-    });
+//     // Find goal by name
+//     let goalId = null;
+//     if (goal) {
+//       const goals = await storage.goals.getUserGoals(userId);
+//       const matchedGoal = goals.find(g => 
+//         g.title.toLowerCase().includes(goal.toLowerCase())
+//       );
+//       if (matchedGoal) {
+//         goalId = matchedGoal.id;
+//       }
+//     }
 
-    let linkMessage = '';
-    if (objectiveId) {
-      linkMessage = ' under your specified objective';
-    } else if (goalId) {
-      linkMessage = ' under your specified goal';
-    }
+//     if (!goalId) {
+//       return { 
+//         success: false, 
+//         message: 'Please specify which goal this objective belongs to, or create a goal first' 
+//       };
+//     }
 
-    return {
-      success: true,
-      message: `Task "${title}" created successfully${linkMessage}`,
-      data: { task }
-    };
-  } catch (error) {
-    console.error('Add task error:', error);
-    return {
-      success: false,
-      message: 'Failed to create task'
-    };
-  }
-}
+//     const objective = await storage.objectives.createObjective({
+//       userId,
+//       goalId,
+//       title,
+//       description: description || '',
+//       targetMonth: month || new Date().getMonth() + 1,
+//       targetYear: year || new Date().getFullYear(),
+//       keyResults: [],
+//       status: 'active',
+//     });
+
+//     return {
+//       success: true,
+//       message: `Objective "${title}" created successfully under your goal`,
+//       data: { objective }
+//     };
+//   } catch (error) {
+//     console.error('Create objective error:', error);
+//     return {
+//       success: false,
+//       message: 'Failed to create objective'
+//     };
+//   }
+// }
+
+// async function executeAIAddTask(userId: string, entities: any): Promise<any> {
+//   try {
+//     const { title, description, date, time, duration, priority, objective, goal } = entities;
+
+//     if (!title) {
+//       return { success: false, message: 'Task title is required' };
+//     }
+
+//     // Parse date
+//     let scheduledDate = new Date();
+//     if (date) {
+//       const parsedDate = parseDate(date);
+//       if (parsedDate) {
+//         scheduledDate = parsedDate;
+//       }
+//     }
+
+//     // Find objective or goal if specified
+//     let objectiveId = null;
+//     let goalId = null;
+
+//     if (objective) {
+//       const objectives = await storage.objectives.getUserObjectives(userId);
+//       const matchedObjective = objectives.find(obj => 
+//         obj.title.toLowerCase().includes(objective.toLowerCase())
+//       );
+//       if (matchedObjective) {
+//         objectiveId = matchedObjective.id;
+//         goalId = matchedObjective.goalId;
+//       }
+//     }
+
+//     if (!objectiveId && goal) {
+//       const goals = await storage.goals.getUserGoals(userId);
+//       const matchedGoal = goals.find(g => 
+//         g.title.toLowerCase().includes(goal.toLowerCase())
+//       );
+//       if (matchedGoal) {
+//         goalId = matchedGoal.id;
+//       }
+//     }
+
+//     // Create task
+//     const task = await storage.tasks.createTask({
+//       userId,
+//       objectiveId,
+//       goalId,
+//       title,
+//       description: description || '',
+//       scheduledDate,
+//       scheduledTime: time || null,
+//       estimatedDuration: duration || 30,
+//       priority: priority || 'medium',
+//       status: 'pending',
+//       tags: [],
+//     });
+
+//     let linkMessage = '';
+//     if (objectiveId) {
+//       linkMessage = ' under your specified objective';
+//     } else if (goalId) {
+//       linkMessage = ' under your specified goal';
+//     }
+
+//     return {
+//       success: true,
+//       message: `Task "${title}" created successfully${linkMessage}`,
+//       data: { task }
+//     };
+//   } catch (error) {
+//     console.error('Add task error:', error);
+//     return {
+//       success: false,
+//       message: 'Failed to create task'
+//     };
+//   }
+// }
 
 // async function executeAIModifyTask(userId: string, entities: any): Promise<any> {
 //   try {
@@ -1209,147 +1460,736 @@ async function executeAIAddTask(userId: string, entities: any): Promise<any> {
 
 // Replace the executeAIModifyTask function with this enhanced version:
 
-async function executeAIModifyTask(userId: string, entities: any): Promise<any> {
-  try {
-    console.log('🔍 ModifyTask entities received:', JSON.stringify(entities, null, 2));
+// async function executeAIModifyTask(userId: string, entities: any): Promise<any> {
+//   try {
+//     console.log('🔍 ModifyTask entities received:', JSON.stringify(entities, null, 2));
     
-    const { original_title, field, newValue, title, originalText, date, time, priority, status, duration, description } = entities;
+//     const { original_title, field, newValue, title, originalText, date, time, priority, status, duration, description } = entities;
 
-    // ✅ STEP 1: Find the task using multiple strategies
-    let task = null;
-    let searchTerm = original_title || title || '';
+//     // ✅ STEP 1: Find the task using multiple strategies
+//     let task = null;
+//     let searchTerm = original_title || title || field || '';
 
-    console.log('🔍 Searching for task with identifier:', searchTerm);
-    // If no explicit task identifier, try to extract from original text
-    if (!searchTerm && originalText) {
-      searchTerm = extractTaskFromText(originalText);
+//     console.log('🔍 Searching for task with identifier:', searchTerm);
+//     // If no explicit task identifier, try to extract from original text
+//     if (!searchTerm && originalText) {
+//       searchTerm = extractTaskFromText(originalText);
+//     }
+
+//     if (!searchTerm) {
+//       return {
+//         success: false,
+//         message: 'Please specify which task to modify. For example: "Change task meeting priority to high" or "Update workout to tomorrow"'
+//       };
+//     }
+
+//     // Find the task with fuzzy matching
+//     task = await findTaskByTitle(userId, searchTerm);
+    
+//     if (!task) {
+//       // Get all user tasks to show available options
+//       const userTasks = await storage.tasks.getUserTasks(userId, new Date(0), new Date());
+//       const taskTitles = userTasks.slice(0, 5).map(t => `"${t.title}"`).join(', ');
+      
+//       return {
+//         success: false,
+//         message: `❌ I couldn't find a task matching "${searchTerm}". ${userTasks.length > 0 ? `Available tasks: ${taskTitles}${userTasks.length > 5 ? '...' : ''}` : 'You have no tasks yet.'}`
+//       };
+//     }
+
+//     // ✅ STEP 2: Enhanced field and value detection from entities
+//     let detectedField = field;
+//     let detectedValue = newValue;
+
+//     // ✅ NEW: Check for direct entity fields (this is what was missing!)
+//     if (!detectedField || !detectedValue) {
+//       if (date) {
+//         detectedField = 'scheduledDate';
+//         detectedValue = date;
+//         console.log('✅ Found date from entities:', date);
+//       } else if (time) {
+//         detectedField = 'scheduledTime';
+//         detectedValue = time;
+//         console.log('✅ Found time from entities:', time);
+//       } else if (priority) {
+//         detectedField = 'priority';
+//         detectedValue = priority;
+//         console.log('✅ Found priority from entities:', priority);
+//       } else if (status) {
+//         detectedField = 'status';
+//         detectedValue = status;
+//         console.log('✅ Found status from entities:', status);
+//       } else if (duration) {
+//         detectedField = 'estimatedDuration';
+//         detectedValue = duration;
+//         console.log('✅ Found duration from entities:', duration);
+//       } else if (description) {
+//         detectedField = 'description';
+//         detectedValue = description;
+//         console.log('✅ Found description from entities:', description);
+//       }
+//     }
+
+//     // ✅ STEP 3: If still no field/value, try to extract from original text
+//     if ((!detectedField || !detectedValue) && originalText) {
+//       const extracted = extractFieldAndValueFromText(originalText, task.title);
+//       if (extracted.field && extracted.value) {
+//         detectedField = extracted.field;
+//         detectedValue = extracted.value;
+//         console.log('✅ Extracted from text:', extracted);
+//       }
+//     }
+
+//     // ✅ STEP 4: Smart inference for common patterns
+//     if (!detectedField || !detectedValue) {
+//       // Try to infer from the entities we have
+//       const inferredResult = inferFieldAndValue(entities, originalText);
+//       if (inferredResult.field && inferredResult.value) {
+//         detectedField = inferredResult.field;
+//         detectedValue = inferredResult.value;
+//         console.log('✅ Inferred field/value:', inferredResult);
+//       }
+//     }
+
+//     if (!detectedField || !detectedValue) {
+//       return {
+//         success: false,
+//         message: `❌ Please specify what to change about "${task.title}". Examples:\n• "Change priority to high"\n• "Move to tomorrow"\n• "Set duration to 60 minutes"\n• "Mark as completed"`
+//       };
+//     }
+
+//     // ✅ STEP 5: Normalize and validate the field and value
+//     const normalizedField = normalizeField(detectedField);
+//     const normalizedValue = await normalizeValue(normalizedField, detectedValue);
+
+//     if (!normalizedField) {
+//       return {
+//         success: false,
+//         message: `❌ Cannot modify "${detectedField}". Supported fields: title, description, priority, date, time, duration, status, location`
+//       };
+//     }
+
+//     // ✅ STEP 6: Validate the value
+//     const validation = validateFieldValue(normalizedField, normalizedValue);
+//     if (!validation.valid) {
+//       return {
+//         success: false,
+//         message: validation.message
+//       };
+//     }
+
+//     // ✅ STEP 7: Update the task
+//     const updateData: any = {};
+//     updateData[normalizedField] = normalizedValue;
+
+//     console.log(`🔧 Updating task "${task.title}" - ${normalizedField}: ${normalizedValue}`);
+    
+//     const updatedTask = await storage.tasks.updateTask(task.id, updateData);
+
+//     return {
+//       success: true,
+//       message: `✅ Successfully updated "${task.title}" - ${getFieldDisplayName(normalizedField)} changed to "${getValueDisplayText(normalizedField, normalizedValue)}"`,
+//       data: { task: updatedTask }
+//     };
+//   } catch (error) {
+//     console.error('❌ Modify task error:', error);
+//     return {
+//       success: false,
+//       message: 'Failed to modify task: ' + (error instanceof Error ? error.message : 'Unknown error')
+//     };
+//   }
+// }
+
+// ✅ NEW: Smart inference function for common patterns
+
+async function executeAICommand(userId: string, nlResult: any): Promise<any> {
+  try {
+    switch (nlResult.intent) {
+      case 'add_task':
+        console.log('📝 Processing add task with entities:', nlResult.entities);
+        return await executeAIAddTaskDirect(userId, nlResult.entities);
+        
+      case 'modify_task':
+        console.log('🔧 Processing modify task with entities:', nlResult.entities);
+        return await executeAIModifyTaskDirect(userId, nlResult.entities);
+        
+      case 'delete_task':
+        console.log('🗑️ Processing delete task with entities:', nlResult.entities);
+        return await executeAIDeleteTaskDirect(userId, nlResult.entities);
+        
+      case 'schedule_task':
+        console.log('📅 Processing schedule task with entities:', nlResult.entities);
+        return await executeAIScheduleTaskDirect(userId, nlResult.entities);
+        
+      case 'create_goal':
+        console.log('🎯 Processing create goal with entities:', nlResult.entities);
+        return await executeAICreateGoalDirect(userId, nlResult.entities);
+        
+      case 'create_objective':
+        console.log('📋 Processing create objective with entities:', nlResult.entities);
+        return await executeAICreateObjectiveDirect(userId, nlResult.entities);
+        
+      case 'create_roadmap':
+        console.log('🗺️ Processing create roadmap with entities:', nlResult.entities);
+        return await executeAICreateRoadmapDirect(userId, nlResult.entities);
+        
+      case 'ask_question':
+        console.log('❓ Processing question with entities:', nlResult.entities);
+        return await executeAIQuestionDirect(userId, nlResult.entities);
+        
+      default:
+        return {
+          success: false,
+          message: 'Unknown command intent'
+        };
     }
+  } catch (error) {
+    return {
+      success: false,
+      message: 'Failed to execute command',
+      error: error instanceof Error ? error.message : 'Failed to execute command'
+    };
+  }
+}
 
-    if (!searchTerm) {
-      return {
-        success: false,
-        message: 'Please specify which task to modify. For example: "Change task meeting priority to high" or "Update workout to tomorrow"'
+// ✅ NEW: Direct execution functions for all command types
+
+async function executeAIAddTaskDirect(userId: string, entities: any): Promise<any> {
+  try {
+    const { title, description, date, time, duration, priority, objective, goal } = entities;
+
+    if (!title) {
+      return { 
+        success: false, 
+        message: 'Task title is required. Please specify what task you want to create.' 
       };
     }
 
-    // Find the task with fuzzy matching
-    task = await findTaskByTitle(userId, searchTerm);
-    
+    // Parse date
+    let scheduledDate = new Date();
+    if (date) {
+      const parsedDate = await normalizeValue('scheduledDate', date);
+      const dateObj = new Date(parsedDate);
+      if (!isNaN(dateObj.getTime())) {
+        scheduledDate = dateObj;
+      }
+    }
+
+    // Find objective or goal if specified
+    let objectiveId = null;
+    let goalId = null;
+
+    if (objective) {
+      const objectives = await storage.objectives.getUserObjectives(userId);
+      const matchedObjective = objectives.find(obj => 
+        obj.title.toLowerCase().includes(objective.toLowerCase())
+      );
+      if (matchedObjective) {
+        objectiveId = matchedObjective.id;
+        goalId = matchedObjective.goalId;
+      }
+    }
+
+    if (!objectiveId && goal) {
+      const goals = await storage.goals.getUserGoals(userId);
+      const matchedGoal = goals.find(g => 
+        g.title.toLowerCase().includes(goal.toLowerCase())
+      );
+      if (matchedGoal) {
+        goalId = matchedGoal.id;
+      }
+    }
+
+    // Create task
+    const task = await storage.tasks.createTask({
+      userId,
+      objectiveId,
+      goalId,
+      title,
+      description: description || '',
+      scheduledDate,
+      scheduledTime: time ? await normalizeValue('scheduledTime', time) : null,
+      estimatedDuration: duration || 30,
+      priority: priority || 'medium',
+      status: 'pending',
+      tags: [],
+    });
+
+    let linkMessage = '';
+    if (objectiveId) {
+      linkMessage = ' and linked to your specified objective';
+    } else if (goalId) {
+      linkMessage = ' and linked to your specified goal';
+    }
+
+    return {
+      success: true,
+      message: `✅ Task "${title}" created successfully${linkMessage}`,
+      data: { task }
+    };
+  } catch (error) {
+    console.error('Add task error:', error);
+    return {
+      success: false,
+      message: 'Failed to create task: ' + (error instanceof Error ? error.message : 'Unknown error')
+    };
+  }
+}
+
+async function executeAIDeleteTaskDirect(userId: string, entities: any): Promise<any> {
+  try {
+    const { task, confirmDelete } = entities;
+
     if (!task) {
-      // Get all user tasks to show available options
+      return {
+        success: false,
+        message: 'Please specify which task to delete. For example: "Delete my meeting task"'
+      };
+    }
+
+    if (!confirmDelete) {
+      return {
+        success: false,
+        message: 'Task deletion requires confirmation. Please confirm you want to delete this task.'
+      };
+    }
+
+    // Find the task
+    const foundTask = await storage.tasks.getTaskByTitle(userId, task);
+    
+    if (!foundTask) {
       const userTasks = await storage.tasks.getUserTasks(userId, new Date(0), new Date());
       const taskTitles = userTasks.slice(0, 5).map(t => `"${t.title}"`).join(', ');
       
       return {
         success: false,
-        message: `❌ I couldn't find a task matching "${searchTerm}". ${userTasks.length > 0 ? `Available tasks: ${taskTitles}${userTasks.length > 5 ? '...' : ''}` : 'You have no tasks yet.'}`
+        message: `❌ I couldn't find a task matching "${task}". ${userTasks.length > 0 ? `Available tasks: ${taskTitles}${userTasks.length > 5 ? '...' : ''}` : 'You have no tasks yet.'}`
       };
     }
 
-    // ✅ STEP 2: Enhanced field and value detection from entities
-    let detectedField = field;
-    let detectedValue = newValue;
+    // Delete the task
+    const deleted = await storage.tasks.deleteTask(foundTask.id);
 
-    // ✅ NEW: Check for direct entity fields (this is what was missing!)
-    if (!detectedField || !detectedValue) {
-      if (date) {
-        detectedField = 'scheduledDate';
-        detectedValue = date;
-        console.log('✅ Found date from entities:', date);
-      } else if (time) {
-        detectedField = 'scheduledTime';
-        detectedValue = time;
-        console.log('✅ Found time from entities:', time);
-      } else if (priority) {
-        detectedField = 'priority';
-        detectedValue = priority;
-        console.log('✅ Found priority from entities:', priority);
-      } else if (status) {
-        detectedField = 'status';
-        detectedValue = status;
-        console.log('✅ Found status from entities:', status);
-      } else if (duration) {
-        detectedField = 'estimatedDuration';
-        detectedValue = duration;
-        console.log('✅ Found duration from entities:', duration);
-      } else if (description) {
-        detectedField = 'description';
-        detectedValue = description;
-        console.log('✅ Found description from entities:', description);
-      }
-    }
-
-    // ✅ STEP 3: If still no field/value, try to extract from original text
-    if ((!detectedField || !detectedValue) && originalText) {
-      const extracted = extractFieldAndValueFromText(originalText, task.title);
-      if (extracted.field && extracted.value) {
-        detectedField = extracted.field;
-        detectedValue = extracted.value;
-        console.log('✅ Extracted from text:', extracted);
-      }
-    }
-
-    // ✅ STEP 4: Smart inference for common patterns
-    if (!detectedField || !detectedValue) {
-      // Try to infer from the entities we have
-      const inferredResult = inferFieldAndValue(entities, originalText);
-      if (inferredResult.field && inferredResult.value) {
-        detectedField = inferredResult.field;
-        detectedValue = inferredResult.value;
-        console.log('✅ Inferred field/value:', inferredResult);
-      }
-    }
-
-    if (!detectedField || !detectedValue) {
+    if (deleted) {
+      return {
+        success: true,
+        message: `✅ Successfully deleted task "${foundTask.title}"`,
+        data: { deletedTask: foundTask }
+      };
+    } else {
       return {
         success: false,
-        message: `❌ Please specify what to change about "${task.title}". Examples:\n• "Change priority to high"\n• "Move to tomorrow"\n• "Set duration to 60 minutes"\n• "Mark as completed"`
+        message: 'Failed to delete the task. Please try again.'
       };
     }
-
-    // ✅ STEP 5: Normalize and validate the field and value
-    const normalizedField = normalizeField(detectedField);
-    const normalizedValue = await normalizeValue(normalizedField, detectedValue);
-
-    if (!normalizedField) {
-      return {
-        success: false,
-        message: `❌ Cannot modify "${detectedField}". Supported fields: title, description, priority, date, time, duration, status, location`
-      };
-    }
-
-    // ✅ STEP 6: Validate the value
-    const validation = validateFieldValue(normalizedField, normalizedValue);
-    if (!validation.valid) {
-      return {
-        success: false,
-        message: validation.message
-      };
-    }
-
-    // ✅ STEP 7: Update the task
-    const updateData: any = {};
-    updateData[normalizedField] = normalizedValue;
-
-    console.log(`🔧 Updating task "${task.title}" - ${normalizedField}: ${normalizedValue}`);
-    
-    const updatedTask = await storage.tasks.updateTask(task.id, updateData);
-
-    return {
-      success: true,
-      message: `✅ Successfully updated "${task.title}" - ${getFieldDisplayName(normalizedField)} changed to "${getValueDisplayText(normalizedField, normalizedValue)}"`,
-      data: { task: updatedTask }
-    };
   } catch (error) {
-    console.error('❌ Modify task error:', error);
+    console.error('Delete task error:', error);
     return {
       success: false,
-      message: 'Failed to modify task: ' + (error instanceof Error ? error.message : 'Unknown error')
+      message: 'Failed to delete task: ' + (error instanceof Error ? error.message : 'Unknown error')
     };
   }
 }
 
-// ✅ NEW: Smart inference function for common patterns
+async function executeAIScheduleTaskDirect(userId: string, entities: any): Promise<any> {
+  try {
+    const { task, date, time } = entities;
+
+    if (!task) {
+      return {
+        success: false,
+        message: 'Please specify which task to schedule. For example: "Schedule my meeting for tomorrow"'
+      };
+    }
+
+    if (!date) {
+      return {
+        success: false,
+        message: 'Please specify when to schedule the task. For example: "tomorrow", "Monday", or "2024-01-15"'
+      };
+    }
+
+    // Find the task
+    const foundTask = await storage.tasks.getTaskByTitle(userId, task);
+    
+    if (!foundTask) {
+      const userTasks = await storage.tasks.getUserTasks(userId, new Date(0), new Date());
+      const taskTitles = userTasks.slice(0, 5).map(t => `"${t.title}"`).join(', ');
+      
+      return {
+        success: false,
+        message: `❌ I couldn't find a task matching "${task}". ${userTasks.length > 0 ? `Available tasks: ${taskTitles}${userTasks.length > 5 ? '...' : ''}` : 'You have no tasks yet.'}`
+      };
+    }
+
+    // Normalize date and time
+    const normalizedDate = await normalizeValue('scheduledDate', date);
+    const normalizedTime = time ? await normalizeValue('scheduledTime', time) : foundTask.scheduledTime;
+
+    // Update the task
+    const updateData: any = {
+      scheduledDate: new Date(normalizedDate)
+    };
+
+    if (normalizedTime) {
+      updateData.scheduledTime = normalizedTime;
+    }
+
+    const updatedTask = await storage.tasks.updateTask(foundTask.id, updateData);
+
+    const timeMsg = normalizedTime ? ` at ${normalizedTime}` : '';
+    
+    return {
+      success: true,
+      message: `✅ Successfully scheduled "${foundTask.title}" for ${normalizedDate}${timeMsg}`,
+      data: { task: updatedTask }
+    };
+  } catch (error) {
+    console.error('Schedule task error:', error);
+    return {
+      success: false,
+      message: 'Failed to schedule task: ' + (error instanceof Error ? error.message : 'Unknown error')
+    };
+  }
+}
+
+async function executeAICreateGoalDirect(userId: string, entities: any): Promise<any> {
+  try {
+    const { title, description, category, year, priority } = entities;
+
+    if (!title) {
+      return { 
+        success: false, 
+        message: 'Goal title is required. Please specify what goal you want to create.' 
+      };
+    }
+
+    if (!description) {
+      return { 
+        success: false, 
+        message: 'Goal description is required. Please provide more details about your goal.' 
+      };
+    }
+
+    if (!category) {
+      return { 
+        success: false, 
+        message: 'Goal category is required. Please specify if this is for career, health, personal, financial, education, or other.' 
+      };
+    }
+
+    const currentYear = new Date().getFullYear();
+    
+    const goal = await storage.goals.createGoal({
+      userId,
+      title,
+      description,
+      category,
+      targetYear: year || currentYear,
+      priority: priority || 'medium',
+      status: 'active',
+    });
+
+    return {
+      success: true,
+      message: `✅ Goal "${title}" created successfully for ${year || currentYear}`,
+      data: { goal }
+    };
+  } catch (error) {
+    console.error('Create goal error:', error);
+    return {
+      success: false,
+      message: 'Failed to create goal: ' + (error instanceof Error ? error.message : 'Unknown error')
+    };
+  }
+}
+
+async function executeAICreateObjectiveDirect(userId: string, entities: any): Promise<any> {
+  try {
+    const { title, description, goal, month, year } = entities;
+
+    if (!title) {
+      return { 
+        success: false, 
+        message: 'Objective title is required. Please specify what objective you want to create.' 
+      };
+    }
+
+    if (!description) {
+      return { 
+        success: false, 
+        message: 'Objective description is required. Please provide more details about your objective.' 
+      };
+    }
+
+    if (!goal) {
+      return { 
+        success: false, 
+        message: 'Goal reference is required. Please specify which goal this objective belongs to.' 
+      };
+    }
+
+    if (!month) {
+      return { 
+        success: false, 
+        message: 'Target month is required. Please specify which month (1-12) this objective is for.' 
+      };
+    }
+
+    // Find goal by name
+    const goals = await storage.goals.getUserGoals(userId);
+    const matchedGoal = goals.find(g => 
+      g.title.toLowerCase().includes(goal.toLowerCase())
+    );
+    
+    if (!matchedGoal) {
+      const goalTitles = goals.slice(0, 3).map(g => `"${g.title}"`).join(', ');
+      return { 
+        success: false, 
+        message: `❌ I couldn't find a goal matching "${goal}". ${goals.length > 0 ? `Available goals: ${goalTitles}${goals.length > 3 ? '...' : ''}` : 'Please create a goal first.'}` 
+      };
+    }
+
+    const currentYear = new Date().getFullYear();
+
+    const objective = await storage.objectives.createObjective({
+      userId,
+      goalId: matchedGoal.id,
+      title,
+      description,
+      targetMonth: month,
+      targetYear: year || currentYear,
+      keyResults: [],
+      status: 'active',
+    });
+
+    return {
+      success: true,
+      message: `✅ Objective "${title}" created successfully for ${getMonthName(month)} ${year || currentYear} under goal "${matchedGoal.title}"`,
+      data: { objective }
+    };
+  } catch (error) {
+    console.error('Create objective error:', error);
+    return {
+      success: false,
+      message: 'Failed to create objective: ' + (error instanceof Error ? error.message : 'Unknown error')
+    };
+  }
+}
+
+async function executeAICreateRoadmapDirect(userId: string, entities: any): Promise<any> {
+  try {
+    const { prompt, description, timeframe, category } = entities;
+
+    if (!prompt) {
+      return { 
+        success: false, 
+        message: 'Roadmap description is required. Please specify what you want to achieve.' 
+      };
+    }
+
+    if (!description) {
+      return { 
+        success: false, 
+        message: 'Detailed description is required. Please provide more context about your roadmap goals.' 
+      };
+    }
+
+    // Get user for roadmap generation
+    const user = await storage.users.getUserById(userId);
+    if (!user) {
+      return { 
+        success: false, 
+        message: 'User not found' 
+      };
+    }
+
+    // Generate the roadmap
+    const roadmapResult = await geminiAIService.createRoadmap(prompt, user);
+
+    // Create the goal
+    const goal = await storage.goals.createGoal({
+      userId,
+      title: roadmapResult.goal.title,
+      description: roadmapResult.goal.description,
+      category: (['career', 'health', 'personal', 'financial', 'education', 'other'].includes(roadmapResult.goal.category)
+        ? roadmapResult.goal.category
+        : 'personal') as 'career' | 'health' | 'personal' | 'financial' | 'education' | 'other',
+      targetYear: roadmapResult.goal.year,
+      priority: roadmapResult.goal.priority,
+      status: 'active',
+    });
+
+    // Create objectives
+    const objectives = [];
+    for (const objData of roadmapResult.objectives) {
+      const objective = await storage.objectives.createObjective({
+        userId,
+        goalId: goal.id,
+        title: objData.title,
+        description: objData.description,
+        targetMonth: objData.targetMonth,
+        targetYear: roadmapResult.goal.year,
+        keyResults: objData.keyResults.map((kr: any) => ({
+                  id: uuidv4(),
+                  description: kr.description,
+                  targetValue: kr.targetValue || 0,
+                  currentValue: 0,
+                  unit: kr.unit || '',
+                  completed: false,
+                  })),
+        status: 'active',
+      });
+      objectives.push(objective);
+    }
+
+    // Create tasks
+    const tasks = [];
+    for (const taskData of roadmapResult.tasks) {
+      const objective = objectives.find(o => o.targetMonth === taskData.objectiveMonth);
+      
+      const task = await storage.tasks.createTask({
+        userId,
+        objectiveId: objective?.id || null,
+        goalId: goal.id,
+        title: taskData.title,
+        description: taskData.description || '',
+        scheduledDate: new Date(taskData.scheduledDate),
+        scheduledTime: taskData.scheduledTime || null,
+        estimatedDuration: taskData.estimatedDuration,
+        priority: taskData.priority,
+        status: 'pending',
+        tags: taskData.tags,
+      });
+      tasks.push(task);
+    }
+
+    return {
+      success: true,
+      message: `✅ Roadmap "${roadmapResult.goal.title}" created successfully with ${objectives.length} objectives and ${tasks.length} tasks`,
+      data: { 
+        goal,
+        objectives,
+        tasks: tasks.slice(0, 10), // Limit response size
+        totalTasks: tasks.length,
+        roadmapResult 
+      }
+    };
+  } catch (error) {
+    console.error('Create roadmap error:', error);
+    return {
+      success: false,
+      message: 'Failed to create roadmap: ' + (error instanceof Error ? error.message : 'Unknown error')
+    };
+  }
+}
+
+async function executeAIQuestionDirect(userId: string, entities: any): Promise<any> {
+  try {
+    const { questionType, query } = entities;
+
+    if (!query) {
+      return {
+        success: false,
+        message: 'Please specify your question clearly.'
+      };
+    }
+
+    // Handle different question types
+    switch (questionType) {
+      case 'tasks':
+        const today = new Date();
+        const todayTasks = await storage.tasks.getUserTasks(userId, today, today);
+        
+        return {
+          success: true,
+          message: `You have ${todayTasks.length} tasks for today`,
+          data: { 
+            tasks: todayTasks,
+            query,
+            questionType: 'tasks'
+          }
+        };
+
+      case 'goals':
+        const goals = await storage.goals.getUserGoals(userId);
+        const activeGoals = goals.filter(g => g.status === 'active');
+        
+        return {
+          success: true,
+          message: `You have ${activeGoals.length} active goals`,
+          data: { 
+            goals: activeGoals,
+            query,
+            questionType: 'goals'
+          }
+        };
+
+      case 'schedule':
+        const tomorrow = new Date();
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        const upcomingTasks = await storage.tasks.getUserTasks(userId, new Date(), tomorrow);
+        
+        return {
+          success: true,
+          message: `Your schedule includes ${upcomingTasks.length} tasks for today and tomorrow`,
+          data: { 
+            tasks: upcomingTasks,
+            query,
+            questionType: 'schedule'
+          }
+        };
+
+      case 'productivity':
+        const thirtyDaysAgo = new Date();
+        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+        const recentTasks = await storage.tasks.getUserTasks(userId, thirtyDaysAgo, new Date());
+        const completedTasks = recentTasks.filter(t => t.status === 'completed');
+        const completionRate = recentTasks.length > 0 ? Math.round((completedTasks.length / recentTasks.length) * 100) : 0;
+        
+        return {
+          success: true,
+          message: `Your productivity rate is ${completionRate}% with ${completedTasks.length} of ${recentTasks.length} tasks completed in the last 30 days`,
+          data: { 
+            completionRate,
+            totalTasks: recentTasks.length,
+            completedTasks: completedTasks.length,
+            query,
+            questionType: 'productivity'
+          }
+        };
+
+      default:
+        return {
+          success: true,
+          message: 'I understand your question. For specific information about tasks, goals, schedule, or productivity, try asking more specifically.',
+          data: { 
+            query,
+            questionType: 'general',
+            suggestion: 'Try asking about "my tasks today", "my active goals", "my schedule", or "my productivity"'
+          }
+        };
+    }
+  } catch (error) {
+    console.error('Question processing error:', error);
+    return {
+      success: false,
+      message: 'Failed to process question: ' + (error instanceof Error ? error.message : 'Unknown error')
+    };
+  }
+}
+
+// Helper function
+function getMonthName(month: number): string {
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+  return months[month - 1] || 'Unknown';
+}
+
+
+
 export function inferFieldAndValue(entities: any, originalText: string = ''): { field: string; value: string } {
   console.log('🔍 Inferring field/value from entities:', entities);
   
@@ -1604,44 +2444,52 @@ export function extractTaskFromText(text: string): string {
   return '';
 }
 
-export async function findTaskByTitle(userId: string, titleQuery: string): Promise<any | null> {
+export async function findTaskByTitle(userId: string, title: string): Promise<any | null> {
   try {
-    const userTasks = await storage.tasks.getUserTasks(userId, new Date(0), new Date());
+    // const userTasks = await storage.tasks.getUserTasks(userId, new Date(0), new Date());
     
-    if (userTasks.length === 0) return null;
+    // if (userTasks.length === 0) return null;
     
-    const query = titleQuery.toLowerCase().trim();
+    // const query = titleQuery.toLowerCase().trim();
     
-    // 1. Exact match first
-    let task = userTasks.find(t => t.title.toLowerCase() === query);
-    if (task) return task;
+    // // 1. Exact match first
+    // let task = userTasks.find(t => t.title.toLowerCase() === query);
+    // if (task) return task;
     
-    // 2. Starts with match
-    task = userTasks.find(t => t.title.toLowerCase().startsWith(query));
-    if (task) return task;
+    // // 2. Starts with match
+    // task = userTasks.find(t => t.title.toLowerCase().startsWith(query));
+    // if (task) return task;
     
-    // 3. Contains match
-    task = userTasks.find(t => t.title.toLowerCase().includes(query));
-    if (task) return task;
+    // // 3. Contains match
+    // task = userTasks.find(t => t.title.toLowerCase().includes(query));
+    // if (task) return task;
     
-    // 4. Word-based matching
-    const queryWords = query.split(/\s+/);
-    task = userTasks.find(t => {
-      const titleWords = t.title.toLowerCase().split(/\s+/);
-      return queryWords.every(word => 
-        titleWords.some(titleWord => titleWord.includes(word) || word.includes(titleWord))
-      );
-    });
-    if (task) return task;
+    // // 4. Word-based matching
+    // const queryWords = query.split(/\s+/);
+    // task = userTasks.find(t => {
+    //   const titleWords = t.title.toLowerCase().split(/\s+/);
+    //   return queryWords.every(word => 
+    //     titleWords.some(titleWord => titleWord.includes(word) || word.includes(titleWord))
+    //   );
+    // });
+    // if (task) return task;
     
-    // 5. Fuzzy matching (simple similarity)
-    const bestMatch = userTasks.reduce<{ task: any | null; similarity: number }>((best, current) => {
-      const similarity = calculateSimilarity(query, current.title.toLowerCase());
-      return similarity > best.similarity && similarity > 0.6 ? 
-        { task: current, similarity } : best;
-    }, { task: null, similarity: 0 });
+    // // 5. Fuzzy matching (simple similarity)
+    // const bestMatch = userTasks.reduce<{ task: any | null; similarity: number }>((best, current) => {
+    //   const similarity = calculateSimilarity(query, current.title.toLowerCase());
+    //   return similarity > best.similarity && similarity > 0.6 ? 
+    //     { task: current, similarity } : best;
+    // }, { task: null, similarity: 0 });
     
-    return bestMatch.task;
+    // return bestMatch.task;
+    const task = await storage.tasks.getTaskByTitle(userId, title);
+
+    if (!task) {
+      console.log(`No task found for title: "${title}"`);
+      return null;
+    }
+
+    return task;
   } catch (error) {
     console.error('Error finding task by title:', error);
     return null;
@@ -1897,19 +2745,21 @@ async function executeAIDeleteTask(userId: string, entities: any): Promise<any> 
     }
 
     // Find the task
-    let task = null;
-    const userTasks = await storage.tasks.getUserTasks(userId, new Date(0), new Date());
+    // let task = null;
+    // const userTasks = await storage.tasks.getUserTasks(userId, new Date(0), new Date());
     
-    if (taskIdentifier) {
-      task = userTasks.find(t => 
-        t.title.toLowerCase().includes(taskIdentifier.toLowerCase()) ||
-        t.id === taskIdentifier
-      );
-    } else if (title) {
-      task = userTasks.find(t => 
-        t.title.toLowerCase().includes(title.toLowerCase())
-      );
-    }
+    // if (taskIdentifier) {
+    //   task = userTasks.find(t => 
+    //     t.title.toLowerCase().includes(taskIdentifier.toLowerCase()) ||
+    //     t.id === taskIdentifier
+    //   );
+    // } else if (title) {
+    //   task = userTasks.find(t => 
+    //     t.title.toLowerCase().includes(title.toLowerCase())
+    //   );
+    // }
+
+    const task  = await storage.tasks.getTaskByTitle(userId, taskIdentifier || title);
 
     if (!task) {
       return {

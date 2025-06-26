@@ -190,6 +190,17 @@ router.put(
           ...kr,
           id: kr.id || uuidv4(),
         }));
+        
+        // If key results are being updated, recalculate status
+        const newStatus = determineObjectiveStatus(updates.keyResults, existingObjective.status);
+        updates.status = newStatus;
+        
+        // Recalculate progress
+        const completedCount = updates.keyResults.filter((kr: any) => kr.completed).length;
+        const newProgress = updates.keyResults.length > 0
+          ? (completedCount / updates.keyResults.length) * 100
+          : 0;
+        updates.progress = newProgress.toString();
       }
 
       const updatedObjective = await storage.objectives.updateObjective(
@@ -211,6 +222,30 @@ router.put(
     }
   }
 );
+
+// Helper function to determine objective status based on key results
+function determineObjectiveStatus(
+  keyResults: any[],
+  currentStatus: string
+): 'active' | 'completed' | 'paused' {
+  if (keyResults.length === 0) {
+    // No key results, keep current status unless it's completed
+    return currentStatus === 'completed' ? 'active' : (currentStatus as any);
+  }
+
+  const completedCount = keyResults.filter((kr) => kr.completed).length;
+
+  if (completedCount === keyResults.length) {
+    // All key results completed
+    return 'completed';
+  } else if (completedCount > 0 && currentStatus === 'completed') {
+    // Some key results uncompleted, revert from completed
+    return 'active';
+  } else {
+    // Keep current status (active/paused)
+    return currentStatus as any;
+  }
+}
 
 // PUT /api/objectives/:id/key-results
 router.put(
@@ -252,15 +287,33 @@ router.put(
           ? (completedCount / updatedKeyResults.length) * 100
           : 0;
 
+      // Determine new status using helper function
+      const newStatus = determineObjectiveStatus(
+        updatedKeyResults,
+        objective.status
+      );
+
       const updatedObjective = await storage.objectives.updateObjective(id, {
         keyResults: updatedKeyResults,
         progress: newProgress.toString(),
+        status: newStatus,
       });
+
+      // Log status change for debugging
+      if (newStatus !== objective.status) {
+        console.log(
+          `📋 Objective "${objective.title}" status changed from "${objective.status}" to "${newStatus}"`
+        );
+      }
 
       res.json({
         success: true,
         data: { objective: updatedObjective },
-        message: 'Key result updated successfully',
+        message: `Key result updated successfully${
+          newStatus !== objective.status
+            ? `. Objective status changed to ${newStatus}`
+            : ''
+        }`,
       });
     } catch (error) {
       console.error('Update key result error:', error);

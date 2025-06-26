@@ -413,7 +413,29 @@ export class DailyTaskStorage {
 
   async deleteTask(id: string): Promise<boolean> {
     const result = await db.delete(dailyTasks).where(eq(dailyTasks.id, id));
-    return result.length > 0;
+    return result.length == 0;
+  }
+
+  async getTaskByTitle(userId: string, title: string): Promise<DbDailyTask | null> {
+    try {
+      console.log(`🔍 Searching for task with title: "${title}" for user: ${userId}`);
+      
+      const [task] = await db
+        .select()
+        .from(dailyTasks)
+        .where(
+          and(
+            eq(dailyTasks.userId, userId),
+            eq(dailyTasks.title, title)
+          )
+        )
+        .limit(1);
+
+      return task || null;
+    } catch (error) {
+      console.error('Storage getTaskByTitle error:', error);
+      throw error;
+    }
   }
 
   async getTaskCompletionStats(

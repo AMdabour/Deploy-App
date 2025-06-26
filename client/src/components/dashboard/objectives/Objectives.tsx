@@ -418,6 +418,8 @@ const Objectives = () => {
     completed: boolean
   ) => {
     try {
+      setError(null);
+
       const updateData: {
         keyResultId: string;
         currentValue?: number;
@@ -456,11 +458,42 @@ const Objectives = () => {
                     )
                   : 0;
 
-              return { ...obj, keyResults: updatedKeyResults, progress };
+              // Determine new status based on completion
+              let newStatus = obj.status;
+              if (updatedKeyResults.length > 0) {
+                if (completedCount === updatedKeyResults.length) {
+                  newStatus = 'completed';
+                } else if (completedCount > 0 && obj.status === 'completed') {
+                  newStatus = 'active';
+                }
+              }
+
+              return { 
+                ...obj, 
+                keyResults: updatedKeyResults, 
+                progress,
+                status: newStatus
+              };
             }
             return obj;
           })
         );
+
+        // Trigger dashboard refresh if status changed
+        const updatedObj = objectives.find(o => o.id === objectiveId);
+        if (updatedObj) {
+          const updatedKeyResults = updatedObj.keyResults.map((kr) =>
+            kr.id === keyResultId ? { ...kr, currentValue, completed } : kr
+          );
+          const completedCount = updatedKeyResults.filter((kr) => kr.completed).length;
+          const statusChanged = (completedCount === updatedKeyResults.length && updatedObj.status !== 'completed') ||
+                              (completedCount < updatedKeyResults.length && updatedObj.status === 'completed');
+          
+          if (statusChanged) {
+            localStorage.setItem('dashboard-refresh-trigger', Date.now().toString());
+            window.dispatchEvent(new CustomEvent('dashboardRefresh'));
+          }
+        }
       } else {
         setError(response.error || 'Failed to update key result');
       }

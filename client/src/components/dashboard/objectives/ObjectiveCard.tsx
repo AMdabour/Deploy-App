@@ -77,9 +77,11 @@ const ObjectiveCard: React.FC<ObjectiveCardProps> = ({
 
   const handleKeyResultUpdate = (keyResult: KeyResult, newValue: number) => {
     if (onUpdateKeyResult) {
+      // Auto-complete if target value is reached
       const completed = keyResult.targetValue
         ? newValue >= keyResult.targetValue
         : keyResult.completed;
+
       onUpdateKeyResult(objective.id, keyResult.id, newValue, completed);
     }
   };
@@ -91,6 +93,7 @@ const ObjectiveCard: React.FC<ObjectiveCardProps> = ({
         newCompleted && keyResult.targetValue
           ? keyResult.targetValue
           : keyResult.currentValue || 0;
+
       onUpdateKeyResult(objective.id, keyResult.id, currentValue, newCompleted);
     }
   };
